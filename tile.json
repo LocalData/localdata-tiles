@@ -3,6 +3,7 @@
 	"bounds" : [-180, -85.05112877980659, 180, 85.05112877980659],
 	"center" : [0, 0, 4],
 	"description" : "Lovingly crafted with Node and node-canvas.",
+  "attribution" : "Data by Data",
 	"grids"       : ["/utfgrids/{z}/{x}/{y}.json"],
 	"id"          : "map",
 	"legend"      : "<div style=\"text-align:center;\"><div style=\"font:12pt/16pt Georgia,serif;\">San Francisco</div><div style=\"font:italic 10pt/16pt Georgia,serif;\">by Ben and Rob</div></div>",

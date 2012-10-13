@@ -16,6 +16,8 @@ app.use(Express.static(__dirname + '/public'));
 // just use one map for everything
 var map = new Map();
 var tilejson = require(__dirname + '/tile');
+// attribution
+tilejson.attribution = 'Awesomed by <a href=\"http://github.com/codeforamerica/nodetiles\">Nodetiles</a> — ' + tilejson.attribution;
 
 // map.addData(function() { return layers });
 // map.addData(function(x1, y1, x2, y2, projection, callback) { callback(null, layers); });
@@ -35,6 +37,7 @@ app.get('/', function(req, res) {
 // app.get('/utfgrids/:zoom/:col/:row', utfgrid);
 
 app.get('/tile.:format', function(req, res) {
+  
   if (req.params.format === 'json' || req.params.format === 'jsonp' ) {
     res.jsonp(tilejson);
   }
