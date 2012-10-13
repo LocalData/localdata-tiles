@@ -103,8 +103,7 @@ app.get('/utfgrids/:zoom/:col/:row.:format?', function utfgrid(req, res) {
   }
   else {
     renderHandler = function(err, grid) {
-      // TODO: "grid()" shouldn't be hardcoded (should be value of "callback" param)
-      res.send('grid(' + JSON.stringify(grid) + ')', { 'Content-Type': 'application/json' }, 200);
+      res.jsonp(grid);
     };
   }
   // tileRenderer.renderGrid(tileCoordinate[0], tileCoordinate[1], tileCoordinate[2], layers, renderHandler, respondWithImage);
