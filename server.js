@@ -3,23 +3,22 @@ var PORT = process.env.PORT || process.argv[2] || 3000;
 var DEBUG = true;
 
 // Script
-var path = require('path');
-var Express = require('express');
+var path = require('path'),
+    express = require('express'),
+    app = express();
+    
 var Map = require('nodetiles');
 var GeoJsonSource = require('./node_modules/nodetiles/datasources/GeoJson'); // TODO: expose this
 var PostGISSource = require('./node_modules/nodetiles/datasources/PostGIS');
 var Projector = require('./node_modules/nodetiles/projector');
 
-// App configuration
-var app = Express();
-app.use(Express.compress());
-app.use(Express.static(__dirname + '/public'));
+
+app.use(express.compress());
+app.use(express.static(__dirname + '/public'));
 
 // just use one map for everything
 var map = new Map();
 var tilejson = require(__dirname + '/tile');
-// attribution
-tilejson.attribution = 'Awesomed by <a href=\"http://github.com/codeforamerica/nodetiles\">Nodetiles</a> — ' + tilejson.attribution;
 
 map.addData(new PostGISSource({
   connectionString: "tcp://postgres@localhost/postgis", //required
@@ -47,6 +46,8 @@ app.get('/', function(req, res) {
 // app.get('/utfgrids/:zoom/:col/:row', utfgrid);
 
 app.get('/tile.:format', function(req, res) {
+  // attribution
+  tilejson.attribution = 'Awesomed by <a href=\"http://github.com/codeforamerica/nodetiles\">Nodetiles</a> — ' + tilejson.attribution;
   
   if (req.params.format === 'json' || req.params.format === 'jsonp' ) {
     res.jsonp(tilejson);
@@ -56,19 +57,17 @@ app.get('/tile.:format', function(req, res) {
   }
 });
 
-
 // simple default utility server
 // app.get('/tiles/:zoom/:col/:row', TileServer.getTile);
-app.get('/tiles/:zoom/:col/:row', function tile(req, res) {
+app.get('/tiles/:zoom/:col/:row.png', function tile(req, res) {
   // TODO: clean this up since it's halfway to Express
   // TODO: handle no extension and non-png extensions
   // verify arguments
-  var tileCoordinate = [req.params.zoom, req.params.col, path.basename(req.params.row, '.png')];
+  var tileCoordinate = [req.params.zoom, req.params.col, req.params.row];
   if (!tileCoordinate || tileCoordinate.length != 3) {
-      console.error(req.url, 'not a coordinate, match =', tileCoordinate);
-      res.writeHead(404);
-      res.end();
-      return;
+    console.error(req.url, 'not a coordinate, match =', tileCoordinate);
+    res.send(404, req.url + 'not a coordinate, match =' + tileCoordinate);
+    return;
   }
   
   console.log('Requested tile: ' + tileCoordinate.join('/'));
@@ -100,8 +99,7 @@ app.get('/utfgrids/:zoom/:col/:row.:format?', function utfgrid(req, res) {
   var tileCoordinate = [req.params.zoom, req.params.col, req.params.row];
   if (!tileCoordinate || tileCoordinate.length != 3) {
       console.error(req.url, 'not a coordinate, match =', tileCoordinate);
-      res.writeHead(404);
-      res.end();
+      res.send(404, req.url + 'not a coordinate, match =' + tileCoordinate);
       return;
   }
   
@@ -135,5 +133,5 @@ app.get('/utfgrids/:zoom/:col/:row.:format?', function utfgrid(req, res) {
   map.renderGrid(minX, minY, maxX, maxY, 64, 64, respondWithImage, renderHandler);
 });
 
-// ...and go!
 app.listen(PORT);
+console.log("Express server listening on port %d in %s mode", PORT, app.settings.env);
