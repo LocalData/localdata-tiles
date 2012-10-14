@@ -8,6 +8,7 @@ var Express = require('express');
 var Map = require('nodetiles');
 var GeoJsonSource = require('./node_modules/nodetiles/datasources/GeoJson'); // TODO: expose this
 var PostGISSource = require('./node_modules/nodetiles/datasources/PostGIS');
+var Projector = require('./node_modules/nodetiles/projector');
 
 // App configuration
 var app = Express();
@@ -25,14 +26,15 @@ map.addData(new PostGISSource({
   tableName: "ogrgeojson", // required
   geomField: "wkb_geometry", // required
   fields: "map_park_n, ogc_fid", //faster if you specify fields, but optional
-  name: "sf_parks" // optional, defaults to table name
+  name: "sf_parks", // optional, defaults to table name
+  projection: "EPSG:4326" 
 }));
 // map.addData(function() { return layers });
 // map.addData(function(x1, y1, x2, y2, projection, callback) { callback(null, layers); });
 //map.addData(new GeoJsonSource({path: __dirname + '/geodata/planning_neighborhoods.json'}));
 // map.addData(new GeoJsonSource({path: __dirname + '/geodata/sf_shore.json'}));
 // map.addData(new GeoJsonSource({path: __dirname + '/geodata/sf_parks.json'}));
-map.addData(new GeoJsonSource({path: __dirname + '/geodata/sf_streets.json'}));
+//map.addData(new GeoJsonSource({path: __dirname + '/geodata/sf_streets.json'}));
 map.addStyle(require('./sf_styles'));
 
 // views
@@ -72,16 +74,19 @@ app.get('/tiles/:zoom/:col/:row', function tile(req, res) {
   console.log('Requested tile: ' + tileCoordinate.join('/'));
   
   tileCoordinate = tileCoordinate.map(Number);
-  
+
   // turn tile coordinates into lat/longs
   // TODO: custom TileMap class or tools for this
+/*
   var scale = Math.pow(2, tileCoordinate[0]);
   var minX = 256 * tileCoordinate[1] / scale;
   var minY = 256 * tileCoordinate[2] / scale;
   var maxX = minX + 256 / scale;
   var maxY = minY + 256 / scale;
-  
-  map.render(minX, minY, maxX, maxY, 256, 256, function(error, canvas) {
+*/
+  var bounds = Projector.util.tileToMeters(tileCoordinate[1], tileCoordinate[2], tileCoordinate[0]);
+
+  map.render(bounds[0], bounds[1], bounds[2], bounds[3], 256, 256, function(error, canvas) {
     var stream = canvas.createPNGStream();
     stream.pipe(res);
   });
