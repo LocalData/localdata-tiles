@@ -6,7 +6,8 @@ var DEBUG = true;
 var path = require('path');
 var Express = require('express');
 var Map = require('nodetiles');
-// var GeoJsonSource = require('./datasources/GeoJson'); // TODO: expose this
+var GeoJsonSource = require('./node_modules/nodetiles/datasources/GeoJson'); // TODO: expose this
+var PostGISSource = require('./node_modules/nodetiles/datasources/PostGIS');
 
 // App configuration
 var app = Express();
@@ -19,13 +20,20 @@ var tilejson = require(__dirname + '/tile');
 // attribution
 tilejson.attribution = 'Awesomed by <a href=\"http://github.com/codeforamerica/nodetiles\">Nodetiles</a> — ' + tilejson.attribution;
 
+map.addData(new PostGISSource({
+  connectionString: "tcp://postgres@localhost/postgis", //required
+  tableName: "ogrgeojson", // required
+  geomField: "wkb_geometry", // required
+  fields: "map_park_n, ogc_fid", //faster if you specify fields, but optional
+  name: "sf_parks" // optional, defaults to table name
+}));
 // map.addData(function() { return layers });
 // map.addData(function(x1, y1, x2, y2, projection, callback) { callback(null, layers); });
 //map.addData(new GeoJsonSource({path: __dirname + '/geodata/planning_neighborhoods.json'}));
 // map.addData(new GeoJsonSource({path: __dirname + '/geodata/sf_shore.json'}));
 // map.addData(new GeoJsonSource({path: __dirname + '/geodata/sf_parks.json'}));
-// map.addData(new GeoJsonSource({path: __dirname + '/geodata/sf_streets.json'}));
-// map.addStyle(require('./sf_styles'));
+map.addData(new GeoJsonSource({path: __dirname + '/geodata/sf_streets.json'}));
+map.addStyle(require('./sf_styles'));
 
 // views
 app.get('/', function(req, res) {
