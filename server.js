@@ -67,8 +67,8 @@ app.get('/tile.:format', function(req, res) {
 // simple default utility server
 // app.get('/tiles/:zoom/:col/:row', TileServer.getTile);
 app.get('/tiles/:zoom/:col/:row.png', function tile(req, res) {
-  // TODO: clean this up since it's halfway to Express
-  // TODO: handle no extension and non-png extensions
+  var tileCoordinate, bounds;
+  
   // verify arguments
   var tileCoordinate = [req.params.zoom, req.params.col, req.params.row];
   if (!tileCoordinate || tileCoordinate.length != 3) {
@@ -91,7 +91,8 @@ app.get('/tiles/:zoom/:col/:row.png', function tile(req, res) {
   var maxY = minY + 256 / scale;
 */
   var bounds = Projector.util.tileToMeters(tileCoordinate[1], tileCoordinate[2], tileCoordinate[0]);
-
+  console.log("BOUNDS:", bounds);
+  
   map.render(bounds[0], bounds[1], bounds[2], bounds[3], 256, 256, function(error, canvas) {
     var stream = canvas.createPNGStream();
     stream.pipe(res);
@@ -142,3 +143,4 @@ app.get('/utfgrids/:zoom/:col/:row.:format?', function utfgrid(req, res) {
 
 app.listen(PORT);
 console.log("Express server listening on port %d in %s mode", PORT, app.settings.env);
+module.exports = app;
