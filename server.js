@@ -7,17 +7,18 @@ var path = require('path'),
     express = require('express'),
     app = express();
     
-var Map = require('nodetiles');
+var map = require('nodetiles');
 var GeoJsonSource = require('./node_modules/nodetiles/datasources/GeoJson'); // TODO: expose this
 var PostGISSource = require('./node_modules/nodetiles/datasources/PostGIS');
-var Projector = require('./node_modules/nodetiles/projector');
+var Projector = map.projector;
+// var GeoJsonSource = require('./datasources/GeoJson'); // TODO: expose this
 
 
 app.use(express.compress());
 app.use(express.static(__dirname + '/public'));
 
 // just use one map for everything
-var map = new Map();
+var map = new map.Map();
 var tilejson = require(__dirname + '/tile');
 
 map.addData(new PostGISSource({
@@ -28,18 +29,18 @@ map.addData(new PostGISSource({
   name: "sf_parks", // optional, defaults to table name
   projection: "EPSG:4326" 
 }));
-map.addData(new PostGISSource({
+/*map.addData(new PostGISSource({
   connectionString: "tcp://postgres@localhost/postgis", //required
   tableName: "sf_streets", // required
   geomField: "wkb_geometry", // required
   projection: "EPSG:900913" 
-}));
+}));*/
 // map.addData(function() { return layers });
 // map.addData(function(x1, y1, x2, y2, projection, callback) { callback(null, layers); });
 //map.addData(new GeoJsonSource({path: __dirname + '/geodata/planning_neighborhoods.json'}));
-// map.addData(new GeoJsonSource({path: __dirname + '/geodata/sf_shore.json'}));
+//map.addData(new GeoJsonSource({path: __dirname + '/geodata/sf_shore.json'}));
 // map.addData(new GeoJsonSource({path: __dirname + '/geodata/sf_parks.json'}));
-//map.addData(new GeoJsonSource({path: __dirname + '/geodata/sf_streets.json'}));
+map.addData(new GeoJsonSource({path: __dirname + '/geodata/sf_streets.json', projection: "EPSG:4326"}));
 map.addStyle(require('./sf_styles'));
 
 // views
