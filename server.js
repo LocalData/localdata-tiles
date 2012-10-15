@@ -28,6 +28,12 @@ map.addData(new PostGISSource({
   name: "sf_parks", // optional, defaults to table name
   projection: "EPSG:4326" 
 }));
+map.addData(new PostGISSource({
+  connectionString: "tcp://postgres@localhost/postgis", //required
+  tableName: "sf_streets", // required
+  geomField: "wkb_geometry", // required
+  projection: "EPSG:900913" 
+}));
 // map.addData(function() { return layers });
 // map.addData(function(x1, y1, x2, y2, projection, callback) { callback(null, layers); });
 //map.addData(new GeoJsonSource({path: __dirname + '/geodata/planning_neighborhoods.json'}));
