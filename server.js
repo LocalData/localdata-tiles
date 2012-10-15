@@ -7,7 +7,7 @@ var path = require('path'),
     express = require('express'),
     app = express();
     
-var Map = require('nodetiles');
+var map = require('nodetiles');
 // var GeoJsonSource = require('./datasources/GeoJson'); // TODO: expose this
 
 
@@ -15,7 +15,7 @@ app.use(express.compress());
 app.use(express.static(__dirname + '/public'));
 
 // just use one map for everything
-var map = new Map();
+var map = new map.Map();
 var tilejson = require(__dirname + '/tile');
 
 // map.addData(function() { return layers });
