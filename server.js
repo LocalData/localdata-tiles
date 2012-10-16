@@ -5,7 +5,8 @@ var DEBUG = true;
 // Script
 var path = require('path'),
     express = require('express'),
-    app = express();
+    app = express(),
+    fs = require('fs');
     
 var map = require('nodetiles');
 var GeoJsonSource = require('./node_modules/nodetiles/datasources/GeoJson'); // TODO: expose this
@@ -38,10 +39,10 @@ map.addData(new PostGISSource({
 // map.addData(function() { return layers });
 // map.addData(function(x1, y1, x2, y2, projection, callback) { callback(null, layers); });
 //map.addData(new GeoJsonSource({path: __dirname + '/geodata/planning_neighborhoods.json'}));
-//map.addData(new GeoJsonSource({path: __dirname + '/geodata/sf_shore.json'}));
+map.addData(new GeoJsonSource({path: __dirname + '/geodata/sf_shore.json', projection: "EPSG:4326"}));
 // map.addData(new GeoJsonSource({path: __dirname + '/geodata/sf_parks.json'}));
 map.addData(new GeoJsonSource({path: __dirname + '/geodata/sf_streets.json', projection: "EPSG:4326"}));
-map.addStyle(require('./sf_styles'));
+map.addStyle(fs.readFileSync('./sf_styles.mss','utf8'));
 
 // views
 app.get('/', function(req, res) {
