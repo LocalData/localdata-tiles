@@ -22,5 +22,5 @@
   },
   "dependencies": {
     "grunt-nodetiles": "https://github.com/codeforamerica/grunt-nodetiles/tarball/master"
-  },
+  }
 }
