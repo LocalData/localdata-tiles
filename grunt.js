@@ -6,11 +6,10 @@ module.exports = function(grunt) {
   // SETTINGS FOR NODETILES
   //
   var nodetiles = {
+    projection: "EPSG:900913",
     tilejson: "map/tile.json", //maps http://*/tiles.jsonp => map/tile.json
     mapstyles: "map/map.css",
   };
-  
-  
 
   grunt.initConfig({
 
