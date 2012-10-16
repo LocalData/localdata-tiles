@@ -2,6 +2,15 @@
 // configuration file, which you can learn more about here:
 // https://github.com/cowboy/grunt/blob/master/docs/configuring.md
 module.exports = function(grunt) {
+  //
+  // SETTINGS FOR NODETILES
+  //
+  var nodetiles = {
+    tilejson: "map/tile.json", //maps http://*/tiles.jsonp => map/tile.json
+    mapstyles: "map/map.css",
+  };
+  
+  
 
   grunt.initConfig({
 
@@ -123,12 +132,18 @@ module.exports = function(grunt) {
     //  To learn more about using the server task, please refer to the code
     //  until documentation has been written.
     server: {
+      nodetiles: nodetiles,
+      
       // Ensure the favicon is mapped correctly.
-      files: { "favicon.ico": "favicon.ico" },
+      files: { 
+        "favicon.ico": "favicon.ico"
+      },
 
       debug: {
         // Ensure the favicon is mapped correctly.
-        files: { "favicon.ico": "favicon.ico" },
+        files: { 
+          "favicon.ico": "favicon.ico"
+        },
 
         // Map `server:debug` to `debug` folders.
         folders: {
