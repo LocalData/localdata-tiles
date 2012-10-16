@@ -19,4 +19,7 @@ geodata
 .svn
 CVS
 
+.env
 node_modules
+
+dist

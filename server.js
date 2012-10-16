@@ -22,14 +22,14 @@ app.use(express.static(__dirname + '/public'));
 var map = new map.Map();
 var tilejson = require(__dirname + '/tile');
 
-map.addData(new PostGISSource({
-  connectionString: "tcp://postgres@localhost/postgis", //required
-  tableName: "ogrgeojson", // required
-  geomField: "wkb_geometry", // required
-  fields: "map_park_n, ogc_fid", //faster if you specify fields, but optional
-  name: "sf_parks", // optional, defaults to table name
-  projection: "EPSG:4326" 
-}));
+// map.addData(new PostGISSource({
+//   connectionString: "tcp://postgres@localhost/postgis", //required
+//   tableName: "ogrgeojson", // required
+//   geomField: "wkb_geometry", // required
+//   fields: "map_park_n, ogc_fid", //faster if you specify fields, but optional
+//   name: "sf_parks", // optional, defaults to table name
+//   projection: "EPSG:4326" 
+// }));
 /*map.addData(new PostGISSource({
   connectionString: "tcp://postgres@localhost/postgis", //required
   tableName: "sf_streets", // required
