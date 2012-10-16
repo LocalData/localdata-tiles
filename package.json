@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "express": "3.x",
-    "nodetiles": "git://github.com/codeforamerica/nodetiles.git"
+    "nodetiles": "https://github.com/codeforamerica/nodetiles/tarball/master"
   },
   "devDependencies": {
     "mocha":  "~1.4.1",
