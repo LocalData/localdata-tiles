@@ -1,15 +1,17 @@
 require([
   "reqwest",
+  "bean",
   "wax"
 ],
 
-function(reqwest, Wax) {
+function(reqwest, bean, Wax) {
   window.reqwest = reqwest; // TODO: find a better way of doing this
+  window.bean = bean;
 
   wax.tilejson('/tile.json', function(tilejson) {
     var map = new L.Map('map')
       .addLayer(new wax.leaf.connector(tilejson))
-      .setView(new L.LatLng(37.751172,-122.430611), 12);
+      .setView(new L.LatLng(0, 0), 2);
           
     wax.leaf.interaction()
       .map(map)

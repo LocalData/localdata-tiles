@@ -21,6 +21,7 @@
     "npm":  "1.1.x"
   },
   "dependencies": {
-    "grunt-nodetiles": "https://github.com/codeforamerica/grunt-nodetiles/tarball/master"
+    "express": "3.x",
+    "nodetiles-core": "https://github.com/codeforamerica/nodetiles-core/tarball/master"
   }
 }

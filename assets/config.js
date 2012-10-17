@@ -14,7 +14,8 @@ require.config({
     lodash: "../assets/js/libs/lodash",
     leaflet: "../assets/vendor/leaflet/leaflet",
     reqwest: "../assets/js/libs/reqwest",
-    wax: "../assets/vendor/wax/wax.leaf"
+    wax: "../assets/vendor/wax/wax.leaf",
+    bean: "../assets/js/libs/bean"
   },
 
 	shim: {
@@ -24,8 +25,11 @@ require.config({
     'leaflet': {
       exports: "L"
     },
+    'bean': {
+      exports: "bean"
+    },
     wax: {
-      deps: ['leaflet', 'reqwest'],
+      deps: ['leaflet', 'bean', 'reqwest'],
       exports: 'Wax'
     }
 	}
