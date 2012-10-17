@@ -33,4 +33,10 @@ I would recommend symlinking between the /node_modules directory and your local 
 ln -s /path/to/nodetiles node_modules/nodetiles
 ```
 
+data
+----
+
+example data
+[Natural Earth](http://naturalearth.org)
+projected to 900913 with [zipit](https://github.com/nvkelso/natural-earth-vector/blob/master/tools/make-web-mercator-900913-ready/zip-it.sh)
 
