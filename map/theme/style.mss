@@ -9,3 +9,10 @@ Map {
   polygon-fill: #ffffee;
 }
 
+@land: #080;
+#world {
+  line-color: lighten(@land, 30%);
+  line-width: 1;
+  polygon-fill: @land;
+}
+

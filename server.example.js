@@ -37,6 +37,11 @@ map.addData(new GeoJsonSource({
   path: __dirname + '/map/data/example.geojson', 
   projection: "EPSG:4326"
 }));
+map.addData(new GeoJsonSource({ 
+  name: "example",
+  path: __dirname + '/map/data/countries.geojson', 
+  projection: "EPSG:900913"
+}));
 map.addStyle(fs.readFileSync('./map/theme/style.mss','utf8'));
 
 
