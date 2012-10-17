@@ -1,19 +1,19 @@
+@land: lighten(#080,20%);
+@text: #FF00FF;
 Map {
-  background-color: #a0c3ff;
+  background-color: @land;
   /* background-image: "grid.png"; */
 }
 
 
-@land: lighten(#080,20%);
-@text: #FF00FF;
 #world {
-  line-color: lighten(@land, 30%);
+  line-color: lighten(yellow, 30%);
   line-width: 1;
-  polygon-fill: @land;
+  polygon-fill: yellow;
 }
 #example {
   line-color: lighten(@text,20%);
-  line-width: 1;
+  line-width: 3;
   polygon-fill: @text;
 }
 
