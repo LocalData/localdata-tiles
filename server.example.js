@@ -33,14 +33,14 @@ var map = new map.Map();
 var tileJson = require(__dirname + '/map/tile');
 
 map.addData(new GeoJsonSource({ 
-  name: "example",
-  path: __dirname + '/map/data/example.geojson', 
-  projection: "EPSG:4326"
+  name: "world",
+  path: __dirname + '/map/data/countries.geojson', 
+  projection: "EPSG:900913"
 }));
 map.addData(new GeoJsonSource({ 
   name: "example",
-  path: __dirname + '/map/data/countries.geojson', 
-  projection: "EPSG:900913"
+  path: __dirname + '/map/data/example.geojson', 
+  projection: "EPSG:4326"
 }));
 map.addStyle(fs.readFileSync('./map/theme/style.mss','utf8'));
 

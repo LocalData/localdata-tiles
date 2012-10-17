@@ -3,16 +3,17 @@ Map {
   /* background-image: "grid.png"; */
 }
 
-#example {
-  line-color: #008;
-  line-width: 1;
-  polygon-fill: #ffffee;
-}
 
-@land: #080;
+@land: lighten(#080,20%);
+@text: #FF00FF;
 #world {
   line-color: lighten(@land, 30%);
   line-width: 1;
   polygon-fill: @land;
+}
+#example {
+  line-color: lighten(@text,20%);
+  line-width: 1;
+  polygon-fill: @text;
 }
 
