@@ -1,15 +1,14 @@
-nodetiles-server
+Nodetiles-init
 ================
 
-This is an example webserver to use with [nodetiles](http://github.com/codeforamerica/nodetiles), a nodejs map rendering library. 
+This is an example webserver for use with the **[nodetiles-core](http://github.com/codeforamerica/nodetiles-core)** library, a fully-featured map rendering library for Node.js. This code is meant to be a convenient starting place for using Nodetiles to build a slippy-map &mdash; including Leaflet, Wax, and default asset/image routes &mdash; but is by no means only way to use the nodetiles-core library.
 
 ![Screenshot of nodetiles-server](https://raw.github.com/codeforamerica/nodetiles-server/master/screenshot.png)
 
-
-installation
+Installation
 -------------
 
-Be sure to install the dependencies:
+After downloading, be sure to install the dependencies (this may require installing cairo and pixman):
 
 ```bash
 $ npm install
@@ -18,22 +17,15 @@ $ npm install
 Then start the server:
 
 ```bash
-$ node server
+$ node server.example.js
 ```
 
 And visit the webpage: [http://localhost:3000](http://localhost:3000)
 
+Configuration
+-------------
 
-nodetiles co-development
--------------------------------------
-
-I would recommend symlinking between the /node_modules directory and your local copy of nodetiles:
-
-```bash
-ln -s /path/to/nodetiles node_modules/nodetiles
-```
-
-data
+Data
 ----
 
 example data
