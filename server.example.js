@@ -29,7 +29,7 @@ var nodetiles = require('nodetiles-core'),
     PostGISSource = nodetiles.datasources.PostGIS,
     Projector = nodetiles.projector;
 
-var map = new nodetiles.Map({projection: 4326});
+var map = new nodetiles.Map();
 var tileJson = require(__dirname + '/map/tile');
 
 map.addData(new GeoJsonSource({ 
