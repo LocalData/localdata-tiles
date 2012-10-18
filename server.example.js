@@ -29,8 +29,12 @@ var nodetiles = require('nodetiles-core'),
     PostGISSource = nodetiles.datasources.PostGIS,
     Projector = nodetiles.projector;
 
-var map = new nodetiles.Map();
 var tileJson = require(__dirname + '/map/tile');
+
+// examples:
+//var map = new nodetiles.Map({projection: "+proj=lcc +lat_1=-14.26666666666667 +lat_0=-14.26666666666667 +lon_0=-170 +k_0=1 +x_0=152400.3048006096 +y_0=0 +ellps=clrk66 +towgs84=-115,118,426,0,0,0,0 +to_meter=0.3048006096012192 +no_defs"});
+//var map = new nodetiles.Map({projection: 4326});
+var map = new nodetiles.Map();
 
 map.addData(new GeoJsonSource({ 
   name: "world",
@@ -42,6 +46,17 @@ map.addData(new GeoJsonSource({
   path: __dirname + '/map/data/example.geojson', 
   projection: "EPSG:4326"
 }));
+
+// PostGIS:
+// map.addData(newPostGISSource({
+//   connectionString: "tcp://postgres@localhost/postgis", // required
+//   tableName: "ogrgeojson",                              // required
+//   geomField: "wkb_geometry",                            // required
+//   fields: "map_park_n, ogc_fid",                        // optional, speeds things up
+//   name: "sf_parks",                                     // optional, uses table name otherwise
+//   projection: 900913,                                   // optional, defaults to 4326
+//});
+
 map.addStyle(fs.readFileSync('./map/theme/style.mss','utf8'));
 
 
