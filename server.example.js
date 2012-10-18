@@ -24,12 +24,12 @@ var path = require('path'),
 //
 // Setup the map
 //
-var map = require('nodetiles-core'),
-    GeoJsonSource = map.datasources.GeoJson,
-    PostGISSource = map.datasources.PostGIS,
-    Projector = map.projector;
+var nodetiles = require('nodetiles-core'),
+    GeoJsonSource = nodetiles.datasources.GeoJson,
+    PostGISSource = nodetiles.datasources.PostGIS,
+    Projector = nodetiles.projector;
 
-var map = new map.Map();
+var map = new nodetiles.Map({projection: 4326});
 var tileJson = require(__dirname + '/map/tile');
 
 map.addData(new GeoJsonSource({ 
