@@ -32,6 +32,7 @@ var nodetiles = require('nodetiles-core'),
 var tileJson = require(__dirname + '/map/tile');
 
 var map = new nodetiles.Map();
+map.assetsPath = path.join(__dirname, "map", "theme");
 
 map.addData(new GeoJsonSource({ 
   name: "world",
@@ -97,9 +98,15 @@ app.get('/tiles/:zoom/:col/:row.png', function tile(req, res) {
   }
   // set the bounds and render
   bounds = Projector.util.tileToMeters(tileCoordinate[1], tileCoordinate[2], tileCoordinate[0]);
-  map.render(bounds[0], bounds[1], bounds[2], bounds[3], 256, 256, function(error, canvas) {
-    var stream = canvas.createPNGStream();
-    stream.pipe(res);
+  map.render({
+    bounds: {minX: bounds[0], minY: bounds[1], maxX: bounds[2], maxY: bounds[3]},
+    width: 256,
+    height: 256,
+    zoom: tileCoordinate[0],
+    callback: function(error, canvas) {
+      var stream = canvas.createPNGStream();
+      stream.pipe(res);
+    }
   });
 });
     
@@ -126,8 +133,15 @@ app.get('/utfgrids/:zoom/:col/:row.:format?', function utfgrid(req, res) {
       res.jsonp(grid);
     };
   }
-  bounds = Projector.util.tileToMeters(tileCoordinate[1], tileCoordinate[2], tileCoordinate[0], 64); // 
-  map.renderGrid(bounds[0], bounds[1], bounds[2], bounds[3], 64, 64, respondWithImage, renderHandler);
+  bounds = Projector.util.tileToMeters(tileCoordinate[1], tileCoordinate[2], tileCoordinate[0], 64);
+  map.renderGrid({
+    bounds: {minX: bounds[0], minY: bounds[1], maxX: bounds[2], maxY: bounds[3]},
+    width: 64,
+    height: 64,
+    zoom: tileCoordinate[0],
+    drawImage: respondWithImage,
+    callback: renderHandler
+  });
 });
     
 app.listen(PORT);

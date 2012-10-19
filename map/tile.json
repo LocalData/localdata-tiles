@@ -1,7 +1,7 @@
 {
 	"basename" : "sf_tile.bentiles",
 	"bounds" : [-180, -85.05112877980659, 180, 85.05112877980659],
-	"center" : [0, 0, 8],
+	"center" : [0, 0, 2],
 	"description" : "Lovingly crafted with Node and node-canvas.",
   "attribution" : "Data by Data",
 	"grids"       : ["/utfgrids/{z}/{x}/{y}.json"],
