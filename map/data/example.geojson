@@ -242,7 +242,7 @@
             "id": 4,
             "properties": {
                 "Name": "ttt",
-                "Description": "with Tom Carden"
+                "Description": ""
             },
             "geometry": {
                 "type": "Polygon",
@@ -293,7 +293,7 @@
             "id": 5,
             "properties": {
                 "Name": "iii",
-                "Description": "Node.js"
+                "Description": ""
             },
             "geometry": {
                 "type": "Polygon",
@@ -328,7 +328,7 @@
             "id": 6,
             "properties": {
                 "Name": "lll",
-                "Description": "Joyful"
+                "Description": ""
             },
             "geometry": {
                 "type": "Polygon",
@@ -371,7 +371,7 @@
             "id": 7,
             "properties": {
                 "Name": "eee",
-                "Description": "Maps"
+                "Description": ""
             },
             "geometry": {
                 "type": "Polygon",
@@ -438,7 +438,7 @@
             "id": 8,
             "properties": {
                 "Name": "sss",
-                "Description": "Code for America"
+                "Description": ""
             },
             "geometry": {
                 "type": "Polygon",
