@@ -48,6 +48,12 @@ map.addData(new GeoJsonSource({
 
 map.addStyle(fs.readFileSync('./map/theme/style.mss','utf8'));
 
+// Wire up the URL routing
+app.use('/tiles', nodetiles.route.tilePng({ map: map })); // tile.png
+app.use('/utfgrids', nodetiles.route.utfGrid({ map: map })); // utfgrids
+// tile.json: use app.get for the tile.json since we're serving a file, not a directory
+app.get('/tile.json', nodetiles.route.tileJson({ path: __dirname + '/map/tile.json' }));
+
 
 //
 // Configure Express routes
@@ -74,74 +80,6 @@ app.configure('production', function(){
 // 1. Serve Index.html
 app.get('/', function(req, res) {
   res.sendfile(__dirname + '/index.html');
-});
-
-// 2. Serve the tile.jsonp
-app.get('/tile.:format', function(req, res) {
-  if (req.params.format === 'json' || req.params.format === 'jsonp' ) {
-    return res.jsonp(tileJson);
-  }
-  else {
-    return req.next();
-  }
-});
-
-// 3. Serve the tiles
-app.get('/tiles/:zoom/:col/:row.png', function tile(req, res) {
-  var tileCoordinate, bounds;
-  
-  // verify arguments
-  var tileCoordinate = [req.params.zoom, req.params.col, req.params.row].map(Number);
-  if (!tileCoordinate || tileCoordinate.length != 3) {
-    res.send(404, req.url + 'not a coordinate, match =' + tileCoordinate);
-    return;
-  }
-  // set the bounds and render
-  bounds = Projector.util.tileToMeters(tileCoordinate[1], tileCoordinate[2], tileCoordinate[0]);
-  map.render({
-    bounds: {minX: bounds[0], minY: bounds[1], maxX: bounds[2], maxY: bounds[3]},
-    width: 256,
-    height: 256,
-    zoom: tileCoordinate[0],
-    callback: function(error, canvas) {
-      var stream = canvas.createPNGStream();
-      stream.pipe(res);
-    }
-  });
-});
-    
-// 4. Serve the utfgrid
-app.get('/utfgrids/:zoom/:col/:row.:format?', function utfgrid(req, res) {
-  var tileCoordinate, respondWithImage, renderHandler, bounds;
-      
-  // verify arguments
-  var tileCoordinate = [req.params.zoom, req.params.col, req.params.row].map(Number);
-  if (!tileCoordinate || tileCoordinate.length != 3) {
-      res.send(404, req.url + 'not a coordinate, match =' + tileCoordinate);
-      return;
-  }
-    
-  respondWithImage = req.params.format === 'png';
-  if (respondWithImage) {
-    renderHandler = function(err, canvas) {
-      var stream = canvas.createPNGStream();
-      stream.pipe(res);
-    };
-  }
-  else {
-    renderHandler = function(err, grid) {
-      res.jsonp(grid);
-    };
-  }
-  bounds = Projector.util.tileToMeters(tileCoordinate[1], tileCoordinate[2], tileCoordinate[0], 64);
-  map.renderGrid({
-    bounds: {minX: bounds[0], minY: bounds[1], maxX: bounds[2], maxY: bounds[3]},
-    width: 64,
-    height: 64,
-    zoom: tileCoordinate[0],
-    drawImage: respondWithImage,
-    callback: renderHandler
-  });
 });
     
 app.listen(PORT);
