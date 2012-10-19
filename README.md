@@ -25,6 +25,13 @@ And visit the webpage: [http://localhost:3000](http://localhost:3000)
 Configuration
 -------------
 
+Deployment to Heroku
+--------------------
+
+```bash
+$ heroku config:add PKG_CONFIG_PATH=/app/vendor/cairo-1.10.2/lib/pkgconfig:/app/vendor/pixman-0.20.2/lib/pkgconfig/
+```
+
 Data
 ----
 
