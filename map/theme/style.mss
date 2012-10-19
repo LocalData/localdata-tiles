@@ -19,7 +19,7 @@ Map {
   text-name: [Description];
   text-placement: line;
   text-size: 16;
-  text-halo-fill: lighten(@text,20%);
+  text-halo-fill: lighten(@text,80%);
   text-halo-radius: 2;
   
   [Name="nnn"] {
