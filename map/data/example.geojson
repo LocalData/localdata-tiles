@@ -6,7 +6,7 @@
             "id": 0,
             "properties": {
                 "Name": "nnn",
-                "Description": null
+                "Description": "Nodetiles"
             },
             "geometry": {
                 "type": "Polygon",
@@ -69,7 +69,7 @@
             "id": 1,
             "properties": {
                 "Name": "ooo",
-                "Description": null
+                "Description": "Ben Sheldon"
             },
             "geometry": {
                 "type": "Polygon",
@@ -126,7 +126,7 @@
             "id": 2,
             "properties": {
                 "Name": "ddd",
-                "Description": null
+                "Description": "Alex Yule"
             },
             "geometry": {
                 "type": "Polygon",
@@ -175,7 +175,7 @@
             "id": 3,
             "properties": {
                 "Name": "eee",
-                "Description": null
+                "Description": "Rob Brackett"
             },
             "geometry": {
                 "type": "Polygon",
@@ -242,7 +242,7 @@
             "id": 4,
             "properties": {
                 "Name": "ttt",
-                "Description": null
+                "Description": "with Tom Carden"
             },
             "geometry": {
                 "type": "Polygon",
@@ -293,7 +293,7 @@
             "id": 5,
             "properties": {
                 "Name": "iii",
-                "Description": null
+                "Description": "Node.js"
             },
             "geometry": {
                 "type": "Polygon",
@@ -328,7 +328,7 @@
             "id": 6,
             "properties": {
                 "Name": "lll",
-                "Description": null
+                "Description": "Joyful"
             },
             "geometry": {
                 "type": "Polygon",
@@ -371,7 +371,7 @@
             "id": 7,
             "properties": {
                 "Name": "eee",
-                "Description": null
+                "Description": "Maps"
             },
             "geometry": {
                 "type": "Polygon",
@@ -438,7 +438,7 @@
             "id": 8,
             "properties": {
                 "Name": "sss",
-                "Description": null
+                "Description": "Code for America"
             },
             "geometry": {
                 "type": "Polygon",
