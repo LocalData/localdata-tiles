@@ -27,6 +27,7 @@ var path = require('path'),
 var nodetiles = require('nodetiles-core'),
     GeoJsonSource = nodetiles.datasources.GeoJson,
     PostGISSource = nodetiles.datasources.PostGIS,
+    ShpSource = nodetiles.datasources.Shp,
     Projector = nodetiles.projector;
 
 var tileJson = require(__dirname + '/map/tile');
@@ -45,6 +46,13 @@ map.addData(new GeoJsonSource({
   path: __dirname + '/map/data/example.geojson', 
   projection: "EPSG:4326"
 }));
+
+/*
+map.addData(new ShpSource({
+  name: "world",
+  path: "/path/to/shapefile_base_name"
+}));
+*/
 
 map.addStyle(fs.readFileSync('./map/theme/style.mss','utf8'));
 
