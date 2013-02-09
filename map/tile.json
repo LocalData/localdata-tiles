@@ -7,7 +7,7 @@
 	"grids"       : ["/utfgrids/{z}/{x}/{y}.json"],
 	"id"          : "map",
 	"legend"      : "<div style=\"text-align:center;\"><div style=\"font:12pt/16pt Georgia,serif;\">San Francisco</div><div style=\"font:italic 10pt/16pt Georgia,serif;\">by Ben and Rob</div></div>",
-	"maxzoom"     : 20,
+	"maxzoom"     : 30,
 	"minzoom"     : 2,
 	"name"        : "San Francisco",
 	"scheme"      : "xyz",
