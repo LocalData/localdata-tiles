@@ -62,7 +62,6 @@ var getOrCreateMapForSurveyId = function(surveyId) {
   var map = new nodetiles.Map();
   map.assetsPath = path.join(__dirname, "map", "theme");
 
-
   // Create the geoJSON path:
   var dataPath = DATA_SOURCE_BASE + '/surveys/' + surveyId + '/responses?format=geojson';
 
@@ -83,10 +82,6 @@ var getOrCreateMapForSurveyId = function(surveyId) {
   mapForSurvey[surveyId] = map;
   return map;
 };
-
-// Legacy
-// Wire up the URL routing
-// app.use('/tiles', routeTilesForSurvey);
 
 // Handle a request for tiles at a specific survey
 // Hopefully this is generic enough...
@@ -109,8 +104,6 @@ app.get('/:surveyId/utfgrids*', function(req, res, next){
 app.get('/:surveyId/tile.json', function(req, res, next){
   var surveyId = req.params.surveyId;
   var map = getOrCreateMapForSurveyId(surveyId);
-  // var route = nodetiles.route.tileJson({ path: __dirname + '/map/tile.json' });
-  // route(req, res, next);
   var tileJson = tileJsonForSurvey(surveyId, req.headers.host);
   res.jsonp(tileJson);
 });
