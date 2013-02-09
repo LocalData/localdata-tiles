@@ -17,14 +17,14 @@ var path = require('path'),
 // - load from a template
 // - use a sensible center
 // - better attribution etc. (use survey data)
-var tileJsonForSurvey = function(surveyId) {
+var tileJsonForSurvey = function(surveyId, host) {
   return {
     "basename" : "sf_tile.bentiles",
     "bounds" : [-180, -85.05112877980659, 180, 85.05112877980659],
     "center" : [0, 0, 2],
     "description" : "Lovingly crafted with Node and node-canvas.",
     "attribution" : "LocalData",
-    "grids"       : [surveyId + "/utfgrids/{z}/{x}/{y}.json"],
+    "grids"       : ['//' + host + '/' + surveyId + "/utfgrids/{z}/{x}/{y}.json"],
     "id"          : "map",
     "legend"      : "<div style=\"text-align:center;\"><div style=\"font:12pt/16pt Georgia,serif;\">San Francisco</div><div style=\"font:italic 10pt/16pt Georgia,serif;\">by Ben and Rob</div></div>",
     "maxzoom"     : 30,
@@ -32,7 +32,7 @@ var tileJsonForSurvey = function(surveyId) {
     "name"        : "San Francisco",
     "scheme"      : "xyz",
     "template"    : '',
-    "tiles"       : [surveyId + "/tiles/{z}/{x}/{y}.png"],
+    "tiles"       : ['//' + host + '/' + surveyId + "/tiles/{z}/{x}/{y}.png"],
     "version"     : "1.0.0",
     "webpage"     : "http://github.com/codeforamerica/nodetiles-init"
   };
@@ -55,6 +55,8 @@ var getOrCreateMapForSurveyId = function(surveyId) {
   if (mapForSurvey[surveyId] !== undefined) {
     return mapForSurvey[surveyId];
   }
+
+  console.log("Setting up new map");
 
   // Set up the map
   var map = new nodetiles.Map();
@@ -103,14 +105,13 @@ app.get('/:surveyId/utfgrids*', function(req, res, next){
   route(req, res, next);
 });
 
-
 // tile.json
 app.get('/:surveyId/tile.json', function(req, res, next){
   var surveyId = req.params.surveyId;
   var map = getOrCreateMapForSurveyId(surveyId);
   // var route = nodetiles.route.tileJson({ path: __dirname + '/map/tile.json' });
   // route(req, res, next);
-  var tileJson = tileJsonForSurvey(surveyId);
+  var tileJson = tileJsonForSurvey(surveyId, req.headers.host);
   res.jsonp(tileJson);
 });
 
