@@ -4,6 +4,7 @@
 
 // Basic configuration
 var PORT = process.env.PORT || process.argv[2] || 3001;
+var DATA_SOURCE_BASE = process.env.DATA_SOURCE_BASE || 'http://localhost:3000/api';
 var DEBUG = true;
 
 var path = require('path'),
@@ -61,7 +62,7 @@ var getOrCreateMapForSurveyId = function(surveyId) {
 
 
   // Create the geoJSON path:
-  var dataPath = 'http://localhost:3000/api/surveys/' + surveyId + '/responses?format=geojson';
+  var dataPath = DATA_SOURCE_BASE + '/surveys/' + surveyId + '/responses?format=geojson';
 
   // Add the remote datasource
   map.addData(new RemoteGeoJsonSource({
