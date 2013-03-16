@@ -40,7 +40,8 @@ var tileJsonForSurvey = function(surveyId, host) {
 
 // Get our requirements
 var nodetiles = require('nodetiles-core'),
-    RemoteGeoJsonSource = nodetiles.datasources.RemoteGeoJson;
+    RemoteGeoJsonSource = nodetiles.datasources.RemoteGeoJson,
+    PostGISSource = nodetiles.datasources.PostGIS;
 
 // var tileJson = require(__dirname + '/map/tile');
 
@@ -63,7 +64,7 @@ var getOrCreateMapForSurveyId = function(surveyId) {
   map.assetsPath = path.join(__dirname, "map", "theme");
 
   // Create the geoJSON path:
-  var dataPath = DATA_SOURCE_BASE + '/surveys/' + surveyId + '/responses?format=geojson';
+  var dataPath = DATA_SOURCE_BASE + '/surveys/' + surveyId + '/responses/in/';
 
   // Add the remote datasource
   map.addData(new RemoteGeoJsonSource({
@@ -71,6 +72,15 @@ var getOrCreateMapForSurveyId = function(surveyId) {
     path: dataPath,
     projection: 'EPSG:4326'
   }));
+
+  // map.addData(new PostGISSource({
+  //   connectionString: "tcp://matth@localhost/test",   // required
+  //   tableName: "responses",                           // required
+  //   geomField: "the_geom",                            // required
+  //   // fields: "map_park_n, ogc_fid",                        // optional, speeds things up
+  //   name: "localdata",                                     // optional, uses table name otherwise
+  //   projection: "EPSG:4326"                                   // optional, defaults to 4326
+  // }));
 
   // Add basic styles
   // TODO

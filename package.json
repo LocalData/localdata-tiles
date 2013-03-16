@@ -23,6 +23,7 @@
   "dependencies": {
     "express": "3.x",
     "nodetiles-core": "https://github.com/localdata/nodetiles-core/tarball/remotegeojson",
-    "request": ">2"
+    "request": ">2",
+    "lodash": "~1.0.1"
   }
 }
