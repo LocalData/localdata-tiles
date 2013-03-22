@@ -41,6 +41,7 @@ var tileJsonForSurvey = function(surveyId, host) {
 // Get our requirements
 var nodetiles = require('nodetiles-core'),
     RemoteGeoJsonSource = nodetiles.datasources.RemoteGeoJson,
+    Mongoose = nodetiles.datasources.Mongoose,
     PostGISSource = nodetiles.datasources.PostGIS;
 
 // var tileJson = require(__dirname + '/map/tile');
@@ -66,12 +67,22 @@ var getOrCreateMapForSurveyId = function(surveyId) {
   // Create the geoJSON path:
   var dataPath = DATA_SOURCE_BASE + '/surveys/' + surveyId + '/responses/in/';
 
-  // Add the remote datasource
-  map.addData(new RemoteGeoJsonSource({
+  map.addData(new Mongoose({
     name: 'localdata',
     path: dataPath,
-    projection: 'EPSG:4326'
+    projection: 'EPSG:4326',
+    surveyId: surveyId,
+    mongoHost: 'localhost',
+    mongoPort: '27017',
+    mongoDB: 'localdata_production'
   }));
+
+  // Add the remote datasource
+//  map.addData(new RemoteGeoJsonSource({
+//    name: 'localdata',
+//    path: dataPath,
+//    projection: 'EPSG:4326'
+//  }));
 
   // map.addData(new PostGISSource({
   //   connectionString: "tcp://matth@localhost/test",   // required
