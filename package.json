@@ -2,7 +2,7 @@
   "name": "nodetiles-server-example",
   "version": "0.0.1",
   "description": "Joyful map rendering with Node.js.",
-  "contributors": [ 
+  "contributors": [
     {
       "name": "Rob Bracket",
       "email": "rob@codeforamerica.org"
@@ -10,7 +10,7 @@
     {
       "name": "Ben Sheldon",
       "email": "ben@codeforamerica.org"
-    }, 
+    },
     {
       "name": "Alex Yule",
       "email": "alexy@codeforamerica.org"
@@ -23,7 +23,7 @@
   "dependencies": {
     "ejs": "~0.8",
     "express": "3.x",
-    "nodetiles-core": "https://github.com/localdata/nodetiles-core/tarball/remotegeojson",
+    "nodetiles-core": "https://github.com/localdata/nodetiles-core/tarball/filters",
     "request": ">2",
     "lodash": "~1.0.1"
   }
