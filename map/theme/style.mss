@@ -9,4 +9,3 @@ Map {
   polygon-opacity:0.85;
   polygon-fill:#ef6d4a;
 }
-

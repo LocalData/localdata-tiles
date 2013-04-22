@@ -1,18 +1,49 @@
+//var agent = require('webkit-devtools-agent');
 /**
  * Sample tileserver for LocalData
  */
 
+/**
+ * Small survey:
+ * (master)nt$ time curl -L --compressed http://localhost:3001/ed6138d0-8a98-11e2-88bd-475906fdae2b/tiles/17/35287/48473.png > file.png
+ *
+ *  Huge survey:
+ *  e9bbcfc0-8cc2-11e2-82e5-ab06ad9f5ce0
+ */
+
 // Basic configuration
 var PORT = process.env.PORT || process.argv[2] || 3001;
-var DATA_SOURCE_BASE = process.env.DATA_SOURCE_BASE || 'http://localhost:3000/api';
+var MONGO = process.env.MONGO || 'mongodb://localhost:27017/localdata_production';
 var DEBUG = true;
 
-var path = require('path'),
-    express = require('express'),
-    app = module.exports = express(),
-    fs = require('fs');
 
+// Libraries
+var ejs = require('ejs');
+var express = require('express');
+var fs = require('fs');
+var mongoose = require('mongoose');
+var path = require('path');
+var app = module.exports = express();
 
+// Local imports
+var nodetiles = require('nodetiles-core');
+var RemoteGeoJsonSource = nodetiles.datasources.RemoteGeoJson;
+var MongooseDataSource = nodetiles.datasources.Mongoose;
+var PostGISSource = nodetiles.datasources.PostGIS;
+
+// Database options
+var connectionParams = {
+  uri: MONGO,
+  opts: {
+    db: {
+      w: 1,
+      safe: true,
+      native_parser: true
+    }
+  }
+};
+
+// Generate tilejson
 // Todo:
 // - load from a template
 // - use a sensible center
@@ -32,85 +63,136 @@ var tileJsonForSurvey = function(surveyId, host) {
     "name"        : "San Francisco",
     "scheme"      : "xyz",
     "template"    : '',
-    "tiles"       : ['//' + host + '/' + surveyId + "/tiles/{z}/{x}/{y}.png"],
+    "tiles"       : ['//' + host + '/' + surveyId + "/filter/condition/tiles/{z}/{x}/{y}.png"], // FILTER HERE
     "version"     : "1.0.0",
     "webpage"     : "http://github.com/codeforamerica/nodetiles-init"
   };
 };
 
-// Get our requirements
-var nodetiles = require('nodetiles-core'),
-    RemoteGeoJsonSource = nodetiles.datasources.RemoteGeoJson,
-    Mongoose = nodetiles.datasources.Mongoose,
-    PostGISSource = nodetiles.datasources.PostGIS;
-
-// var tileJson = require(__dirname + '/map/tile');
 
 // Keep track of the different surveys we have maps for
 var mapForSurvey = {};
 
-var getOrCreateMapForSurveyId = function(surveyId) {
-
-  // Check if we've already created a map with this datasource
-  // TODO
-  // Refresh / reload the datsource when it's updated
-  if (mapForSurvey[surveyId] !== undefined) {
-    return mapForSurvey[surveyId];
-  }
-
-  console.log("Setting up new map");
-
+var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
   // Set up the map
   var map = new nodetiles.Map();
+
+  // Path to the stylesheets
   map.assetsPath = path.join(__dirname, "map", "theme");
 
-  // Create the geoJSON path:
-  var dataPath = DATA_SOURCE_BASE + '/surveys/' + surveyId + '/responses/in/';
-
-  map.addData(new Mongoose({
+  // Mongoose connection parameeters
+  var mongooseParams = {
     name: 'localdata',
-    path: dataPath,
     projection: 'EPSG:4326',
     surveyId: surveyId,
-    mongoHost: 'localhost',
-    mongoPort: '27017',
-    mongoDB: 'localdata_production'
-  }));
+    db: app.db
+  };
 
-  // Add the remote datasource
-//  map.addData(new RemoteGeoJsonSource({
-//    name: 'localdata',
-//    path: dataPath,
-//    projection: 'EPSG:4326'
-//  }));
-
-  // map.addData(new PostGISSource({
-  //   connectionString: "tcp://matth@localhost/test",   // required
-  //   tableName: "responses",                           // required
-  //   geomField: "the_geom",                            // required
-  //   // fields: "map_park_n, ogc_fid",                        // optional, speeds things up
-  //   name: "localdata",                                     // optional, uses table name otherwise
-  //   projection: "EPSG:4326"                                   // optional, defaults to 4326
-  // }));
+  // Add the filter, if there is one.
+  if(filter !== undefined) {
+    mongooseParams.filter = filter;
+  }
+  var datasource = new MongooseDataSource(mongooseParams);
 
   // Add basic styles
-  // TODO
-  // Generate dynamic styles
-  // Eg, based on filters
-  map.addStyle(fs.readFileSync('./map/theme/style.mss','utf8'));
+  if(filter === undefined) {
+    map.addStyle(fs.readFileSync('./map/theme/style.mss','utf8'));
+  }
 
-  // Store and return the map
-  mapForSurvey[surveyId] = map;
-  return map;
+  // If there is a filter, we need to generate styles.
+  if(filter !== undefined) {
+    // Get the form!!
+    var form = datasource.getForm(surveyId, function(form) {
+      var i;
+
+      var colors = [
+          "#df455d",
+          "#ce40bf",
+          "#404ecd",
+          "#40cd98",
+          "#d4e647",
+          "#ee6d4a"
+      ];
+
+      // generate options
+      var options = [];
+
+      var question;
+      for (i = 0; i < form.length; i++) {
+        if(form[i].name === filter.key) {
+          question = form[i];
+          break;
+        }
+      }
+
+
+      for (i = 0; i < question.answers.length; i++) {
+        var s = {
+          key: filter.key,
+          value: question.answers[i].value,
+          color: colors[i]
+        };
+        options.push(s);
+      }
+
+      fs.readFile('./map/theme/filter.mss.template','utf8', function(error, styleTemplate) {
+          var style = ejs.render(styleTemplate, {options: options});
+          // console.log("STYLE: ", style);
+          console.log("Adding style");
+          map.addStyle(style);
+
+          map.addData(datasource);
+          mapForSurvey[surveyId] = map;
+
+          callback(map);
+      }.bind(this));
+
+    }.bind(this));
+  }else {
+
+
+    fs.readFile('./map/theme/style','utf8', function(error, style) {
+      map.addStyle(style);
+      map.addData(datasource);
+      mapForSurvey[surveyId] = map;
+      callback(map);
+    });
+  }
 };
 
-// Handle a request for tiles at a specific survey
-// Hopefully this is generic enough...
+
+// Get tile for a specific survey
 app.get('/:surveyId/tiles*', function(req, res, next){
+  console.log(req.url);
   var surveyId = req.params.surveyId;
-  var map = getOrCreateMapForSurveyId(surveyId);
-  var route = nodetiles.route.tilePng({ map: map });
-  route(req, res, next);
+  var map = getOrCreateMapForSurveyId(surveyId, function(map){
+    var route = nodetiles.route.tilePng({ map: map });
+    route(req, res, next);
+  });
+
+});
+
+// Get tile for a specific survey with a filter
+app.get('/:surveyId/filter/:key/tiles*', function(req, res, next){
+  console.log(req.url);
+  var surveyId = req.params.surveyId;
+  var key = req.params.key;
+
+  var filter = {
+    key: key
+  };
+  var map = getOrCreateMapForSurveyId(surveyId, function(map){
+    var route = nodetiles.route.tilePng({ map: map, filter: filter });
+    route(req, res, next);
+  }.bind(this), filter);
+});
+
+// FILTER: tile.json
+app.get('/:surveyId/filter/:key/tile.json', function(req, res, next){
+  var surveyId = req.params.surveyId;
+  //var map = getOrCreateMapForSurveyId(surveyId);
+  var tileJson = tileJsonForSurvey(surveyId, req.headers.host);
+  res.jsonp(tileJson);
 });
 
 // Serve the UTF grids
@@ -129,22 +211,11 @@ app.get('/:surveyId/tile.json', function(req, res, next){
   res.jsonp(tileJson);
 });
 
-  
-// Old routes ...........................................................
-//
-// Generic UTF Grids
-// TODO: serve per survey
-// app.use('/utfgrids', nodetiles.route.utfGrid({ map: map }));
-
-// tile.json
-// use app.get for the tile.json since we're serving a file, not a directory
-// TODO: serve per survey
-// app.get('/tile.json', nodetiles.route.tileJson({ path: __dirname + '/map/tile.json' }));
 
 // Configure Express routes
 app.configure('development', function(){
   app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
-  
+
   // Backbone routing
   app.use('/assets', express.static(__dirname + '/assets'));
 });
@@ -152,11 +223,9 @@ app.configure('development', function(){
 app.configure('production', function(){
   app.use(express.errorHandler());
   io.set('log level', 1); // reduce logging
-  
+
   // Backbone routing: compilation step is included in `npm install` script
   app.use('/app', express.static(__dirname + '/dist/release'));
-  app.use('/assets/js/libs', express.static(__dirname + '/dist/release'));
-  app.use('/assets/css', express.static(__dirname + '/dist/release'));
   app.use(express.static(__dirname + '/public'));
 });
 
@@ -165,6 +234,13 @@ app.configure('production', function(){
 app.get('/', function(req, res) {
   res.sendfile(__dirname + '/index.html');
 });
-    
-app.listen(PORT);
-console.log("Express server listening on port %d in %s mode", PORT, app.settings.env);
+
+
+// Connect to the DB & run the app
+mongoose.connect(connectionParams.uri); //, connectionParams.opts
+app.db = mongoose.connection;
+
+app.db.once('open', function () {
+  app.listen(PORT);
+  console.log("Express server listening on port %d in %s mode", PORT, app.settings.env);
+});

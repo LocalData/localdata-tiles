@@ -1,0 +1,1 @@
+export MONGO="mongodb://username:password@host:port/database";

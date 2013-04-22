@@ -21,5 +21,7 @@ CVS
 
 .env
 node_modules
+*.sh
+file.png
 
 dist
