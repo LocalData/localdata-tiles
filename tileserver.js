@@ -13,7 +13,7 @@
 
 // Basic configuration
 var PORT = process.env.PORT || process.argv[2] || 3001;
-var MONGO = process.env.MONGO || 'mongodb://localhost:27017/localdata_production';
+var MONGO = 'mongodb://localhost:27017/localdata_production'; // process.env.MONGO || 'mongodb://localhost:27017/localdata_production';
 var DEBUG = true;
 
 
@@ -21,6 +21,8 @@ var DEBUG = true;
 var ejs = require('ejs');
 var express = require('express');
 var fs = require('fs');
+var mongo = require('mongodb');
+var MongoClient = require('mongodb').MongoClient;
 var mongoose = require('mongoose');
 var path = require('path');
 var app = module.exports = express();
@@ -29,6 +31,7 @@ var app = module.exports = express();
 var nodetiles = require('nodetiles-core');
 var RemoteGeoJsonSource = nodetiles.datasources.RemoteGeoJson;
 var MongooseDataSource = nodetiles.datasources.Mongoose;
+var MongoDataSource = nodetiles.datasources.Mongo;
 var PostGISSource = nodetiles.datasources.PostGIS;
 
 // Database options
@@ -48,24 +51,28 @@ var connectionParams = {
 // - load from a template
 // - use a sensible center
 // - better attribution etc. (use survey data)
-var tileJsonForSurvey = function(surveyId, host) {
+var tileJsonForSurvey = function(surveyId, host, filterPath) {
+  var path = surveyId;
+  if (filterPath) {
+    path = path + '/' + filterPath;
+  }
   return {
-    "basename" : "sf_tile.bentiles",
+    "basename" : "localdata.tiles",
     "bounds" : [-180, -85.05112877980659, 180, 85.05112877980659],
     "center" : [0, 0, 2],
     "description" : "Lovingly crafted with Node and node-canvas.",
     "attribution" : "LocalData",
-    "grids"       : ['//' + host + '/' + surveyId + "/utfgrids/{z}/{x}/{y}.json"],
+    "grids"       : ['//' + host + '/' + path + "/utfgrids/{z}/{x}/{y}.json?callback={cb}"],
     "id"          : "map",
-    "legend"      : "<div style=\"text-align:center;\"><div style=\"font:12pt/16pt Georgia,serif;\">San Francisco</div><div style=\"font:italic 10pt/16pt Georgia,serif;\">by Ben and Rob</div></div>",
+    "legend"      : "",
     "maxzoom"     : 30,
     "minzoom"     : 2,
-    "name"        : "San Francisco",
-    "scheme"      : "xyz",
+    "name"        : '',
+    "scheme"      : 'xyz',
     "template"    : '',
-    "tiles"       : ['//' + host + '/' + surveyId + "/filter/condition/tiles/{z}/{x}/{y}.png"], // FILTER HERE
+    "tiles"       : ['//' + host + '/' + path + "/tiles/{z}/{x}/{y}.png"], // FILTER HERE
     "version"     : "1.0.0",
-    "webpage"     : "http://github.com/codeforamerica/nodetiles-init"
+    "webpage"     : "http://localdata.com"
   };
 };
 
@@ -92,7 +99,7 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
   if(filter !== undefined) {
     mongooseParams.filter = filter;
   }
-  var datasource = new MongooseDataSource(mongooseParams);
+  var datasource = new MongoDataSource(mongooseParams);
 
   // Add basic styles
   if(filter === undefined) {
@@ -102,11 +109,12 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
   // If there is a filter, we need to generate styles.
   if(filter !== undefined) {
     // Get the form!!
-    var form = datasource.getForm(surveyId, function(form) {
+    var form = datasource.getForm(surveyId, function(form, error) {
+      console.log("ERROR???", form);
       var i;
 
       var colors = [
-          "#df455d",
+          "#000000",
           "#ce40bf",
           "#404ecd",
           "#40cd98",
@@ -125,6 +133,9 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
         }
       }
 
+      // question.answers = [{value: 'undefined', text: 'No answer'}].push(question.answers);
+      // Use the first color for undefined answers
+      question.answers.unshift({value: 'undefined', text: 'No answer'});
 
       for (i = 0; i < question.answers.length; i++) {
         var s = {
@@ -149,14 +160,15 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
 
     }.bind(this));
   }else {
+    // Create a map with the generic template
 
-
-    fs.readFile('./map/theme/style','utf8', function(error, style) {
+    fs.readFile('./map/theme/style.mss','utf8', function(error, style) {
+      console.log("Got this far", style);
       map.addStyle(style);
       map.addData(datasource);
       mapForSurvey[surveyId] = map;
       callback(map);
-    });
+    }.bind(this));
   }
 };
 
@@ -168,8 +180,7 @@ app.get('/:surveyId/tiles*', function(req, res, next){
   var map = getOrCreateMapForSurveyId(surveyId, function(map){
     var route = nodetiles.route.tilePng({ map: map });
     route(req, res, next);
-  });
-
+  }.bind(this));
 });
 
 // Get tile for a specific survey with a filter
@@ -190,9 +201,22 @@ app.get('/:surveyId/filter/:key/tiles*', function(req, res, next){
 // FILTER: tile.json
 app.get('/:surveyId/filter/:key/tile.json', function(req, res, next){
   var surveyId = req.params.surveyId;
-  //var map = getOrCreateMapForSurveyId(surveyId);
-  var tileJson = tileJsonForSurvey(surveyId, req.headers.host);
+  var key = req.params.key;
+  var filter = 'filter/' + key;
+  var map = getOrCreateMapForSurveyId(surveyId);
+  var tileJson = tileJsonForSurvey(surveyId, req.headers.host, filter);
   res.jsonp(tileJson);
+});
+
+// Serve the UTF grids for a filter
+app.get('/:surveyId/filter/:key/utfgrids*', function(req, res, next){
+  var surveyId = req.params.surveyId;
+  var key = req.params.key;
+  var filter = 'filter/' + key;
+  var map = getOrCreateMapForSurveyId(surveyId, function(map){
+    var route = nodetiles.route.utfGrid({ map: map });
+    route(req, res, next);
+  }.bind(this), filter);
 });
 
 // Serve the UTF grids
@@ -237,10 +261,21 @@ app.get('/', function(req, res) {
 
 
 // Connect to the DB & run the app
-mongoose.connect(connectionParams.uri); //, connectionParams.opts
-app.db = mongoose.connection;
+// mongoose.connect(connectionParams.uri, connectionParams.opts); //, connectionParams.opts
+// app.db = mongoose.connection;
+//
+// app.db.once('open', function () {
+//   app.listen(PORT);
+//   console.log("Express server listening on port %d in %s mode", PORT, app.settings.env);
+// });
 
-app.db.once('open', function () {
+// For use with mongodb-native
+MongoClient.connect(connectionParams.uri, function(err, db) {
+  app.db = db;
   app.listen(PORT);
   console.log("Express server listening on port %d in %s mode", PORT, app.settings.env);
 });
+
+
+
+
