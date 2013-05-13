@@ -1,9 +1,13 @@
+require('nodefly').profile(
+  'af592138ae33eb117c07b0839110ce59',
+  'localdata-nodetiles'
+);
 //var agent = require('webkit-devtools-agent');
-/**
- * Sample tileserver for LocalData
- */
 
 /**
+ * Sample tileserver for LocalData
+ *
+ * LD internal testing notes:
  * Small survey:
  * (master)nt$ time curl -L --compressed http://localhost:3001/ed6138d0-8a98-11e2-88bd-475906fdae2b/tiles/17/35287/48473.png > file.png
  *
@@ -29,10 +33,7 @@ var app = module.exports = express();
 
 // Local imports
 var nodetiles = require('nodetiles-core');
-var RemoteGeoJsonSource = nodetiles.datasources.RemoteGeoJson;
-var MongooseDataSource = nodetiles.datasources.Mongoose;
 var MongoDataSource = nodetiles.datasources.Mongo;
-var PostGISSource = nodetiles.datasources.PostGIS;
 
 // Database options
 var connectionParams = {
@@ -45,6 +46,7 @@ var connectionParams = {
     }
   }
 };
+
 
 // Generate tilejson
 // Todo:
@@ -94,19 +96,19 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
   // Path to the stylesheets
   map.assetsPath = path.join(__dirname, "map", "theme");
 
-  // Mongoose connection parameeters
-  var mongooseParams = {
-    name: 'localdata',
-    projection: 'EPSG:4326',
-    surveyId: surveyId,
-    db: app.db
-  };
-
   // Add the filter, if there is one.
   if(filter !== undefined) {
     mongooseParams.filter = filter;
   }
-  var datasource = new MongoDataSource(mongooseParams);
+  // var datasource = new MongoDataSource(mongooseParams);
+  var datasource = new MongoDataSource({
+    connectionString: connectionParams.uri,
+    collectionName: 'responseCollection',
+    projection: 'EPSG:4326',
+    query: {
+      survey: surveyId
+    }
+  });
 
   // Add basic styles
   if(filter === undefined) {
@@ -167,15 +169,17 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
 
     }.bind(this));
   }else {
-    // Create a map with the generic template
 
-    fs.readFile('./map/theme/style.mss','utf8', function(error, style) {
-      console.log("Got this far", style);
+    // Create a map with the generic template
+    // No filter involved
+    function readFileCB(error, style) {
       map.addStyle(style);
       map.addData(datasource);
       mapForSurvey[surveyId] = map;
       callback(map);
-    }.bind(this));
+    }
+
+    fs.readFile('./map/theme/style.mss','utf8', readFileCB);
   }
 };
 
@@ -230,15 +234,16 @@ app.get('/:surveyId/filter/:key/utfgrids*', function(req, res, next){
 // Serve the UTF grids
 app.get('/:surveyId/utfgrids*', function(req, res, next){
   var surveyId = req.params.surveyId;
-  var map = getOrCreateMapForSurveyId(surveyId);
-  var route = nodetiles.route.utfGrid({ map: map });
-  route(req, res, next);
+  getOrCreateMapForSurveyId(surveyId, function(map) {
+    var route = nodetiles.route.utfGrid({ map: map });
+    route(req, res, next);
+  }.bind(this));
 });
 
 // tile.json
 app.get('/:surveyId/tile.json', function(req, res, next){
   var surveyId = req.params.surveyId;
-  var map = getOrCreateMapForSurveyId(surveyId);
+  // var map = getOrCreateMapForSurveyId(surveyId);
   var tileJson = tileJsonForSurvey(surveyId, req.headers.host);
   res.jsonp(tileJson);
 });
@@ -268,22 +273,9 @@ app.get('/', function(req, res) {
 });
 
 
-// Connect to the DB & run the app
-// mongoose.connect(connectionParams.uri, connectionParams.opts); //, connectionParams.opts
-// app.db = mongoose.connection;
-//
-// app.db.once('open', function () {
-//   app.listen(PORT);
-//   console.log("Express server listening on port %d in %s mode", PORT, app.settings.env);
-// });
 
-// For use with mongodb-native
-MongoClient.connect(connectionParams.uri, function(err, db) {
-  app.db = db;
-  app.listen(PORT);
-  console.log("Express server listening on port %d in %s mode", PORT, app.settings.env);
-});
-
+app.listen(PORT);
+console.log("Express server listening on port %d in %s mode", PORT, app.settings.env);
 
 
 
