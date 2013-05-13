@@ -13,7 +13,7 @@
 
 // Basic configuration
 var PORT = process.env.PORT || process.argv[2] || 3001;
-var MONGO = 'mongodb://localhost:27017/localdata_production'; // process.env.MONGO || 'mongodb://localhost:27017/localdata_production';
+var MONGO = process.env.MONGO || 'mongodb://localhost:27017/localdata_production';
 var DEBUG = true;
 
 
@@ -80,6 +80,13 @@ var tileJsonForSurvey = function(surveyId, host, filterPath) {
 // Keep track of the different surveys we have maps for
 var mapForSurvey = {};
 
+/**
+ * Create a Nodetiles map object for a given survet
+ * @param  {Strign}   surveyId Id of the survey
+ * @param  {Function} callback Callback, param (map)
+ * @param  {Object}   filter   Optional filter
+ *                             Will color the map based on the filter
+ */
 var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
   // Set up the map
   var map = new nodetiles.Map();
@@ -110,7 +117,7 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
   if(filter !== undefined) {
     // Get the form!!
     var form = datasource.getForm(surveyId, function(form, error) {
-      console.log("ERROR???", form);
+      // console.log("ERROR???", error);
       var i;
 
       var colors = [
@@ -147,15 +154,15 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
       }
 
       fs.readFile('./map/theme/filter.mss.template','utf8', function(error, styleTemplate) {
-          var style = ejs.render(styleTemplate, {options: options});
-          // console.log("STYLE: ", style);
-          console.log("Adding style");
-          map.addStyle(style);
+        var style = ejs.render(styleTemplate, {options: options});
+        // console.log("STYLE: ", style);
+        console.log("Adding style");
+        map.addStyle(style);
 
-          map.addData(datasource);
-          mapForSurvey[surveyId] = map;
+        map.addData(datasource);
+        mapForSurvey[surveyId] = map;
 
-          callback(map);
+        callback(map);
       }.bind(this));
 
     }.bind(this));
@@ -203,7 +210,8 @@ app.get('/:surveyId/filter/:key/tile.json', function(req, res, next){
   var surveyId = req.params.surveyId;
   var key = req.params.key;
   var filter = 'filter/' + key;
-  var map = getOrCreateMapForSurveyId(surveyId);
+  // We don't need the filter in this situation
+  // var map = getOrCreateMapForSurveyId(surveyId);
   var tileJson = tileJsonForSurvey(surveyId, req.headers.host, filter);
   res.jsonp(tileJson);
 });
