@@ -28,6 +28,7 @@
     "mongoose": "~3.6",
     "nodefly": "stable",
     "nodetiles-core": "https://github.com/localdata/nodetiles-core/tarball/filters",
+    "nodetiles-mongodb": "https://github.com/localdata/nodetiles-mongodb/tarball/master",
     "request": ">2"
   }
 }
