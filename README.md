@@ -1,9 +1,19 @@
-Nodetiles-init
+localdata-tiles
 ================
 
-This is an example webserver for use with the **[nodetiles-core](http://github.com/codeforamerica/nodetiles-core)** library, a fully-featured map rendering library for Node.js. This code is meant to be a convenient starting place for using Nodetiles to build a slippy-map &mdash; including Leaflet, Wax, and default asset/image routes &mdash; but is by no means only way to use the nodetiles-core library.
+This is an experimental tileserver for use with the **[nodetiles-core](http://github.com/codeforamerica/nodetiles-core)** library, a fully-featured map rendering library for Node.js. It servers tiles and utfgrids for LocalData surveys
 
 Install instructions
 --------------------
 
-* If you're using homebrew, you may need to run `export PKG_CONFIG_PATH=/usr/X11/lib/pkgconfig`
+To run locally:
+
+Clone and run `npm install`. You may need to run `brew install cairo` and confirm
+the installation succeeded (check `brew doctor`) to build this locally.
+
+Copy `setenv_local.sh.sample` and
+
+To run on heroku:
+
+Push to heroku set the `MONGO` environment variable with a valid mongo
+connection string
