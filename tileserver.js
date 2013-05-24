@@ -11,6 +11,11 @@
 
 // var agent = require('webkit-devtools-agent');
 
+require('nodefly').profile(
+  'af592138ae33eb117c07b0839110ce59',
+  'localdata-tiles'
+);
+
 var ejs = require('ejs');
 var express = require('express');
 var fs = require('fs');
