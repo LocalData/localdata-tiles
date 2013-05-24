@@ -100,7 +100,8 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
       survey: surveyId
     },
     select: {
-      'geo_info.geometry': 1
+      'geo_info.geometry': 1,
+      'geo_info.humanReadableName': 1
       // if there's a filter
       // selectConditions['responses.' + this.filter.key] = 1;
     }
