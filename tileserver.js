@@ -1,9 +1,3 @@
-require('nodefly').profile(
-  'af592138ae33eb117c07b0839110ce59',
-  'localdata-nodetiles'
-);
-//var agent = require('webkit-devtools-agent');
-
 /**
  * Sample tileserver for LocalData
  *
@@ -15,25 +9,22 @@ require('nodefly').profile(
  *  e9bbcfc0-8cc2-11e2-82e5-ab06ad9f5ce0
  */
 
-// Basic configuration
-var PORT = process.env.PORT || process.argv[2] || 3001;
-var MONGO = process.env.MONGO || 'mongodb://localhost:27017/localdata_production';
-var DEBUG = true;
+// var agent = require('webkit-devtools-agent');
 
-
-// Libraries
 var ejs = require('ejs');
 var express = require('express');
 var fs = require('fs');
 var mongo = require('mongodb');
 var MongoClient = require('mongodb').MongoClient;
-var mongoose = require('mongoose');
 var path = require('path');
 var app = module.exports = express();
 
-// Local imports
 var nodetiles = require('nodetiles-core');
-var MongoDataSource = nodetiles.datasources.Mongo;
+var MongoDataSource = require('../nodetiles-mongodb/MongoDB.js');
+
+// Basic configuration
+var PORT = process.env.PORT || process.argv[2] || 3001;
+var MONGO = process.env.MONGO || 'mongodb://localhost:27017/localdata_production';
 
 // Database options
 var connectionParams = {
@@ -49,15 +40,14 @@ var connectionParams = {
 
 
 // Generate tilejson
-// Todo:
-// - load from a template
-// - use a sensible center
-// - better attribution etc. (use survey data)
 var tileJsonForSurvey = function(surveyId, host, filterPath) {
   var path = surveyId;
+
+  // The tile path changes if we are adding data filters
   if (filterPath) {
     path = path + '/' + filterPath;
   }
+
   return {
     "basename" : "localdata.tiles",
     "bounds" : [-180, -85.05112877980659, 180, 85.05112877980659],
@@ -98,17 +88,24 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
 
   // Add the filter, if there is one.
   if(filter !== undefined) {
-    mongooseParams.filter = filter;
+    // mongooseParams.filter = filter;
   }
-  // var datasource = new MongoDataSource(mongooseParams);
+
   var datasource = new MongoDataSource({
     connectionString: connectionParams.uri,
     collectionName: 'responseCollection',
     projection: 'EPSG:4326',
+    key: 'geo_info.centroid',
     query: {
       survey: surveyId
+    },
+    select: {
+      'geo_info.geometry': 1
+      // if there's a filter
+      // selectConditions['responses.' + this.filter.key] = 1;
     }
   });
+
 
   // Add basic styles
   if(filter === undefined) {
@@ -162,7 +159,6 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
         map.addStyle(style);
 
         map.addData(datasource);
-        mapForSurvey[surveyId] = map;
 
         callback(map);
       }.bind(this));
@@ -175,7 +171,6 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
     function readFileCB(error, style) {
       map.addStyle(style);
       map.addData(datasource);
-      mapForSurvey[surveyId] = map;
       callback(map);
     }
 
@@ -184,15 +179,24 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
 };
 
 
-// Get tile for a specific survey
-app.get('/:surveyId/tiles*', function(req, res, next){
+/**
+ * Set up a map for rendering
+ */
+function setupTiles(req, res, next) {
   console.log(req.url);
   var surveyId = req.params.surveyId;
   var map = getOrCreateMapForSurveyId(surveyId, function(map){
     var route = nodetiles.route.tilePng({ map: map });
     route(req, res, next);
   }.bind(this));
-});
+}
+
+
+/**
+ * Handle requests for tiles
+ */
+// Get a tile for a survey
+app.get('/:surveyId/tiles*', setupTiles);
 
 // Get tile for a specific survey with a filter
 app.get('/:surveyId/filter/:key/tiles*', function(req, res, next){
@@ -248,34 +252,17 @@ app.get('/:surveyId/tile.json', function(req, res, next){
   res.jsonp(tileJson);
 });
 
-
 // Configure Express routes
 app.configure('development', function(){
   app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
-
-  // Backbone routing
-  app.use('/assets', express.static(__dirname + '/assets'));
 });
 
 app.configure('production', function(){
   app.use(express.errorHandler());
   io.set('log level', 1); // reduce logging
-
-  // Backbone routing: compilation step is included in `npm install` script
-  app.use('/app', express.static(__dirname + '/dist/release'));
-  app.use(express.static(__dirname + '/public'));
 });
 
 
-// Serve index.html
-app.get('/', function(req, res) {
-  res.sendfile(__dirname + '/index.html');
-});
-
-
-
+// Start the server
 app.listen(PORT);
 console.log("Express server listening on port %d in %s mode", PORT, app.settings.env);
-
-
-
