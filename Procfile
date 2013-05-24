@@ -1,1 +1,1 @@
-web: node server.example.js
+web: node tileserver.js
