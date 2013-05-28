@@ -20,14 +20,24 @@ require('nodefly').profile(
 var ejs = require('ejs');
 var express = require('express');
 var fs = require('fs');
+var memwatch = require('memwatch');
 var mongo = require('mongodb');
 var MongoClient = require('mongodb').MongoClient;
 var path = require('path');
 var app = module.exports = express();
 
+memwatch.on('leak', function(info) {
+  console.log("LEAK!", info);
+});
+
+
+memwatch.on('stats', function(stats) {
+  // console.log('stats', stats);
+});
+
 var nodetiles = require('nodetiles-core');
-// var MongoDataSource = require('../nodetiles-mongodb/MongoDB.js');
-var MongoDataSource = require('nodetiles-mongodb');
+var MongoDataSource = require('../nodetiles-mongodb/MongoDB.js');
+//var MongoDataSource = require('nodetiles-mongodb');
 
 // Basic configuration
 var PORT = process.env.PORT || process.argv[2] || 3001;
