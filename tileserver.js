@@ -36,8 +36,8 @@ memwatch.on('stats', function(stats) {
 });
 
 var nodetiles = require('nodetiles-core');
-var MongoDataSource = require('../nodetiles-mongodb/MongoDB.js');
-//var MongoDataSource = require('nodetiles-mongodb');
+//var MongoDataSource = require('../nodetiles-mongodb/MongoDB.js');
+var MongoDataSource = require('nodetiles-mongodb');
 
 // Basic configuration
 var PORT = process.env.PORT || process.argv[2] || 3001;
