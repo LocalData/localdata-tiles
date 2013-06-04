@@ -25,6 +25,7 @@ var mongo = require('mongodb');
 var MongoClient = require('mongodb').MongoClient;
 var path = require('path');
 var app = module.exports = express();
+var db = null;
 
 memwatch.on('leak', function(info) {
   console.log("LEAK!", info);
@@ -36,12 +37,13 @@ memwatch.on('stats', function(stats) {
 });
 
 var nodetiles = require('nodetiles-core');
-//var MongoDataSource = require('../nodetiles-mongodb/MongoDB.js');
-var MongoDataSource = require('nodetiles-mongodb');
+var MongoDataSource = require('../nodetiles-mongodb/MongoDB.js');
+//var MongoDataSource = require('nodetiles-mongodb');
 
 // Basic configuration
 var PORT = process.env.PORT || process.argv[2] || 3001;
 var MONGO = process.env.MONGO || 'mongodb://localhost:27017/localdata_production';
+
 
 // Database options
 var connectionParams = {
@@ -54,6 +56,19 @@ var connectionParams = {
     }
   }
 };
+
+
+// Connect to the database and start the servert
+MongoClient.connect(connectionParams.uri, function(err, db) {
+  if (err) {
+    console.log("Error connecting to database", err);
+    return;
+  }
+
+  db = db;
+  app.listen(PORT);
+  console.log("Express server listening on port %d in %s mode", PORT, app.settings.env);
+
 
 
 // Generate tilejson
@@ -97,6 +112,7 @@ var mapForSurvey = {};
  *                             Will color the map based on the filter
  */
 var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
+
   // Set up the map
   var map = new nodetiles.Map();
 
@@ -109,7 +125,7 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
   }
 
   var datasource = new MongoDataSource({
-    connectionString: connectionParams.uri,
+    db: db,
     collectionName: 'responseCollection',
     projection: 'EPSG:4326',
     key: 'geo_info.centroid',
@@ -281,6 +297,4 @@ app.configure('production', function(){
 });
 
 
-// Start the server
-app.listen(PORT);
-console.log("Express server listening on port %d in %s mode", PORT, app.settings.env);
+}.bind(this));
