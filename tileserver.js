@@ -20,9 +20,9 @@ require('nodefly').profile(
 var ejs = require('ejs');
 var express = require('express');
 var fs = require('fs');
+var http = require('http');
 var memwatch = require('memwatch');
-var mongo = require('mongodb');
-var MongoClient = require('mongodb').MongoClient;
+var mongoose = require('mongoose');
 var path = require('path');
 var app = module.exports = express();
 var db = null;
@@ -57,17 +57,19 @@ var connectionParams = {
   }
 };
 
-
 // Connect to the database and start the servert
-MongoClient.connect(connectionParams.uri, function(err, db) {
-  if (err) {
-    console.log("Error connecting to database", err);
-    return;
-  }
+mongoose.connect(connectionParams.uri);
+db = mongoose.connection;
+db.on('error', function (err) {
+  console.log('Error connecting to database', err);
+  process.exit(1);
+});
+db.once('open', function () {
+  var server = http.createServer(app);
 
-  db = db;
-  app.listen(PORT);
-  console.log("Express server listening on port %d in %s mode", PORT, app.settings.env);
+  server.listen(PORT, function (error) {
+    console.log('Express server listening on port %d in %s mode', PORT, app.settings.env);
+  });
 
 
 
@@ -202,11 +204,11 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
 
     // Create a map with the generic template
     // No filter involved
-    function readFileCB(error, style) {
+    var readFileCB = function readFileCB(error, style) {
       map.addStyle(style);
       map.addData(datasource);
       callback(map);
-    }
+    };
 
     fs.readFile('./map/theme/style.mss','utf8', readFileCB);
   }
