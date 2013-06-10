@@ -8,6 +8,7 @@
  *  Huge survey:
  *  e9bbcfc0-8cc2-11e2-82e5-ab06ad9f5ce0
  */
+'use strict';
 
 // var agent = require('webkit-devtools-agent');
 
@@ -58,22 +59,6 @@ var connectionParams = {
 };
 
 app.use(express.logger());
-
-// Connect to the database and start the servert
-mongoose.connect(connectionParams.uri);
-db = mongoose.connection;
-db.on('error', function (err) {
-  console.log('Error connecting to database', err);
-  process.exit(1);
-});
-db.once('open', function () {
-  var server = http.createServer(app);
-
-  server.listen(PORT, function (error) {
-    console.log('Express server listening on port %d in %s mode', PORT, app.settings.env);
-  });
-
-
 
 // Generate tilejson
 var tileJsonForSurvey = function(surveyId, host, filterPath) {
@@ -226,7 +211,7 @@ function setupTiles(req, res, next) {
   var map = getOrCreateMapForSurveyId(surveyId, function(map){
     var route = nodetiles.route.tilePng({ map: map });
     route(req, res, next);
-  }.bind(this));
+  });
 }
 
 
@@ -301,4 +286,19 @@ app.configure('production', function(){
 });
 
 
-}.bind(this));
+// Connect to the database and start the servert
+mongoose.connect(connectionParams.uri);
+db = mongoose.connection;
+
+db.on('error', function (err) {
+  console.log('Error connecting to database', err);
+  process.exit(1);
+});
+
+db.once('open', function () {
+  var server = http.createServer(app);
+
+  server.listen(PORT, function (error) {
+    console.log('Express server listening on port %d in %s mode', PORT, app.settings.env);
+  });
+});
