@@ -57,6 +57,8 @@ var connectionParams = {
   }
 };
 
+app.use(express.logger());
+
 // Connect to the database and start the servert
 mongoose.connect(connectionParams.uri);
 db = mongoose.connection;
