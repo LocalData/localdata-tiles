@@ -12,11 +12,13 @@
 
 // var agent = require('webkit-devtools-agent');
 
-var NAME = process.env.NAME || 'local';
-require('nodefly').profile(
-  'af592138ae33eb117c07b0839110ce59',
-  ['localdata-tiles', NAME]
-);
+if (process.env.NODEFLY_KEY) {
+  var NAME = process.env.NAME || 'local';
+  require('nodefly').profile(
+    process.env.NODEFLY_KEY,
+    ['localdata-tiles', NAME]
+  );
+}
 
 var ejs = require('ejs');
 var express = require('express');
@@ -91,6 +93,7 @@ var tileJsonForSurvey = function(surveyId, host, filterPath) {
 
 
 // Keep track of the different surveys we have maps for
+// TODO: use a fixed-size LRU cache, so this doesn't grow without bounds.
 var mapForSurvey = {};
 
 /**
@@ -101,6 +104,7 @@ var mapForSurvey = {};
  *                             Will color the map based on the filter
  */
 var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
+  // TODO: cache the result of this, so we don't have to create a new datasource for every tile.
 
   // Set up the map
   var map = new nodetiles.Map();
@@ -206,12 +210,22 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
  * Set up a map for rendering
  */
 function setupTiles(req, res, next) {
-  console.log(req.url);
+  var key = req.params.key;
   var surveyId = req.params.surveyId;
-  var map = getOrCreateMapForSurveyId(surveyId, function(map){
+
+  function respondUsingMap(map) {
     var route = nodetiles.route.tilePng({ map: map });
     route(req, res, next);
-  });
+  }
+
+  if (key) {
+    // Filter!
+    getOrCreateMapForSurveyId(surveyId, respondUsingMap, {
+      key: key
+    });
+  } else {
+    getOrCreateMapForSurveyId(surveyId, respondUsingMap);
+  }
 }
 
 
@@ -222,19 +236,7 @@ function setupTiles(req, res, next) {
 app.get('/:surveyId/tiles*', setupTiles);
 
 // Get tile for a specific survey with a filter
-app.get('/:surveyId/filter/:key/tiles*', function(req, res, next){
-  console.log(req.url);
-  var surveyId = req.params.surveyId;
-  var key = req.params.key;
-
-  var filter = {
-    key: key
-  };
-  var map = getOrCreateMapForSurveyId(surveyId, function(map){
-    var route = nodetiles.route.tilePng({ map: map, filter: filter });
-    route(req, res, next);
-  }.bind(this), filter);
-});
+app.get('/:surveyId/filter/:key/tiles*', setupTiles);
 
 // FILTER: tile.json
 app.get('/:surveyId/filter/:key/tile.json', function(req, res, next){
