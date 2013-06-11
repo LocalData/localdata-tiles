@@ -223,23 +223,6 @@ function createRenderStream(map, tile) {
   return passThrough;
 }
 
-function tilePng(req, res, next){
-  var tileCoordinate, bounds;
-
-  var start = Date.now();
-
-  // verify arguments
-  tileCoordinate = req.path.match(/(\d+)\/(\d+)\/(\d+)\.png$/);
-  if (!tileCoordinate) {
-    return next();
-  }
-  // slice the regexp down to usable size
-  tileCoordinate = tileCoordinate.slice(1,4).map(Number);
-
-  // set the bounds and render
-}
-
-
 /**
  * Set up a map for rendering
  */
