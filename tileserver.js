@@ -223,6 +223,26 @@ function createRenderStream(map, tile) {
   return passThrough;
 }
 
+
+function bufferStream(stream, done) {
+  var bufs = [];
+  var length = 0;
+
+  stream.on('readable', function () {
+    var buf = stream.read();
+    bufs.push(buf);
+    length += buf.length;
+  });
+
+  stream.on('end', function () {
+    done(null, Buffer.concat(bufs, length));
+  });
+
+  stream.on('error', function (error) {
+    done(error);
+  });
+}
+
 /**
  * Set up a map for rendering
  */
@@ -242,7 +262,14 @@ function renderTile(req, res, next) {
   }
 
   function respondUsingMap(map) {
-    createRenderStream(map, tile).pipe(res);
+    bufferStream(createRenderStream(map, tile), function (error, data) {
+      if (error) {
+        console.log(error);
+        res.send(500);
+        return;
+      }
+      res.send(data);
+    });
   }
 
   if (key) {
