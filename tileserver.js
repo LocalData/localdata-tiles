@@ -8,22 +8,26 @@
  *  Huge survey:
  *  e9bbcfc0-8cc2-11e2-82e5-ab06ad9f5ce0
  */
+'use strict';
 
 // var agent = require('webkit-devtools-agent');
 
-var NAME = process.env.NAME || 'local';
-require('nodefly').profile(
-  'af592138ae33eb117c07b0839110ce59',
-  ['localdata-tiles', NAME]
-);
+if (process.env.NODEFLY_KEY) {
+  var NAME = process.env.NAME || 'local';
+  require('nodefly').profile(
+    process.env.NODEFLY_KEY,
+    ['localdata-tiles', NAME]
+  );
+}
 
 var ejs = require('ejs');
 var express = require('express');
 var fs = require('fs');
+var http = require('http');
 var memwatch = require('memwatch');
-var mongo = require('mongodb');
-var MongoClient = require('mongodb').MongoClient;
+var mongoose = require('mongoose');
 var path = require('path');
+var stream = require('stream');
 var app = module.exports = express();
 var db = null;
 
@@ -57,19 +61,7 @@ var connectionParams = {
   }
 };
 
-
-// Connect to the database and start the servert
-MongoClient.connect(connectionParams.uri, function(err, db) {
-  if (err) {
-    console.log("Error connecting to database", err);
-    return;
-  }
-
-  db = db;
-  app.listen(PORT);
-  console.log("Express server listening on port %d in %s mode", PORT, app.settings.env);
-
-
+app.use(express.logger());
 
 // Generate tilejson
 var tileJsonForSurvey = function(surveyId, host, filterPath) {
@@ -102,6 +94,7 @@ var tileJsonForSurvey = function(surveyId, host, filterPath) {
 
 
 // Keep track of the different surveys we have maps for
+// TODO: use a fixed-size LRU cache, so this doesn't grow without bounds.
 var mapForSurvey = {};
 
 /**
@@ -112,6 +105,7 @@ var mapForSurvey = {};
  *                             Will color the map based on the filter
  */
 var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
+  // TODO: cache the result of this, so we don't have to create a new datasource for every tile.
 
   // Set up the map
   var map = new nodetiles.Map();
@@ -202,27 +196,63 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
 
     // Create a map with the generic template
     // No filter involved
-    function readFileCB(error, style) {
+    var readFileCB = function readFileCB(error, style) {
       map.addStyle(style);
       map.addData(datasource);
       callback(map);
-    }
+    };
 
     fs.readFile('./map/theme/style.mss','utf8', readFileCB);
   }
 };
 
 
+function createRenderStream(map, tile) {
+  var passThrough = new stream.PassThrough();
+  var bounds = nodetiles.projector.util.tileToMeters(tile[1], tile[2], tile[0]);
+  map.render({
+    bounds: {minX: bounds[0], minY: bounds[1], maxX: bounds[2], maxY: bounds[3]},
+    width: 256,
+    height: 256,
+    zoom: tile[0],
+    callback: function(err, canvas) {
+      // TODO: handle the error
+      canvas.createPNGStream().pipe(passThrough);
+    }
+  });
+  return passThrough;
+}
+
 /**
  * Set up a map for rendering
  */
-function setupTiles(req, res, next) {
-  console.log(req.url);
+function renderTile(req, res, next) {
+  var key = req.params.key;
   var surveyId = req.params.surveyId;
-  var map = getOrCreateMapForSurveyId(surveyId, function(map){
-    var route = nodetiles.route.tilePng({ map: map });
-    route(req, res, next);
-  }.bind(this));
+  var tile = [];
+
+  try {
+    tile[0] = parseInt(req.params.zoom, 10);
+    tile[1] = parseInt(req.params.x, 10);
+    tile[2] = parseInt(req.params.y, 10);
+  } catch (e) {
+    console.log(e);
+    res.send(500, 'Error parsing tile URL');
+    return;
+  }
+
+  function respondUsingMap(map) {
+    createRenderStream(map, tile).pipe(res);
+  }
+
+  if (key) {
+    // Filter!
+    getOrCreateMapForSurveyId(surveyId, respondUsingMap, {
+      key: key
+    });
+  } else {
+    getOrCreateMapForSurveyId(surveyId, respondUsingMap);
+  }
 }
 
 
@@ -230,22 +260,10 @@ function setupTiles(req, res, next) {
  * Handle requests for tiles
  */
 // Get a tile for a survey
-app.get('/:surveyId/tiles*', setupTiles);
+app.get('/:surveyId/tiles/:zoom/:x/:y.png', renderTile);
 
 // Get tile for a specific survey with a filter
-app.get('/:surveyId/filter/:key/tiles*', function(req, res, next){
-  console.log(req.url);
-  var surveyId = req.params.surveyId;
-  var key = req.params.key;
-
-  var filter = {
-    key: key
-  };
-  var map = getOrCreateMapForSurveyId(surveyId, function(map){
-    var route = nodetiles.route.tilePng({ map: map, filter: filter });
-    route(req, res, next);
-  }.bind(this), filter);
-});
+app.get('/:surveyId/filter/:key/tiles/:zoom/:x/:y.png', renderTile);
 
 // FILTER: tile.json
 app.get('/:surveyId/filter/:key/tile.json', function(req, res, next){
@@ -259,6 +277,8 @@ app.get('/:surveyId/filter/:key/tile.json', function(req, res, next){
 });
 
 // Serve the UTF grids for a filter
+// TODO: handle the routing/http stuff ourselves and just use nodetiles as a
+// renderer, like with the PNG tiles
 app.get('/:surveyId/filter/:key/utfgrids*', function(req, res, next){
   var surveyId = req.params.surveyId;
   var key = req.params.key;
@@ -297,4 +317,19 @@ app.configure('production', function(){
 });
 
 
-}.bind(this));
+// Connect to the database and start the servert
+mongoose.connect(connectionParams.uri);
+db = mongoose.connection;
+
+db.on('error', function (err) {
+  console.log('Error connecting to database', err);
+  process.exit(1);
+});
+
+db.once('open', function () {
+  var server = http.createServer(app);
+
+  server.listen(PORT, function (error) {
+    console.log('Express server listening on port %d in %s mode', PORT, app.settings.env);
+  });
+});
