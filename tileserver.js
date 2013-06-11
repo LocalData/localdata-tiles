@@ -27,6 +27,7 @@ var http = require('http');
 var memwatch = require('memwatch');
 var mongoose = require('mongoose');
 var path = require('path');
+var stream = require('stream');
 var app = module.exports = express();
 var db = null;
 
@@ -206,16 +207,59 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
 };
 
 
+function createRenderStream(map, tile) {
+  var passThrough = new stream.PassThrough();
+  var bounds = nodetiles.projector.util.tileToMeters(tile[1], tile[2], tile[0]);
+  map.render({
+    bounds: {minX: bounds[0], minY: bounds[1], maxX: bounds[2], maxY: bounds[3]},
+    width: 256,
+    height: 256,
+    zoom: tile[0],
+    callback: function(err, canvas) {
+      // TODO: handle the error
+      canvas.createPNGStream().pipe(passThrough);
+    }
+  });
+  return passThrough;
+}
+
+function tilePng(req, res, next){
+  var tileCoordinate, bounds;
+
+  var start = Date.now();
+
+  // verify arguments
+  tileCoordinate = req.path.match(/(\d+)\/(\d+)\/(\d+)\.png$/);
+  if (!tileCoordinate) {
+    return next();
+  }
+  // slice the regexp down to usable size
+  tileCoordinate = tileCoordinate.slice(1,4).map(Number);
+
+  // set the bounds and render
+}
+
+
 /**
  * Set up a map for rendering
  */
-function setupTiles(req, res, next) {
+function renderTile(req, res, next) {
   var key = req.params.key;
   var surveyId = req.params.surveyId;
+  var tile = [];
+
+  try {
+    tile[0] = parseInt(req.params.zoom, 10);
+    tile[1] = parseInt(req.params.x, 10);
+    tile[2] = parseInt(req.params.y, 10);
+  } catch (e) {
+    console.log(e);
+    res.send(500, 'Error parsing tile URL');
+    return;
+  }
 
   function respondUsingMap(map) {
-    var route = nodetiles.route.tilePng({ map: map });
-    route(req, res, next);
+    createRenderStream(map, tile).pipe(res);
   }
 
   if (key) {
@@ -233,10 +277,10 @@ function setupTiles(req, res, next) {
  * Handle requests for tiles
  */
 // Get a tile for a survey
-app.get('/:surveyId/tiles*', setupTiles);
+app.get('/:surveyId/tiles/:zoom/:x/:y.png', renderTile);
 
 // Get tile for a specific survey with a filter
-app.get('/:surveyId/filter/:key/tiles*', setupTiles);
+app.get('/:surveyId/filter/:key/tiles/:zoom/:x/:y.png', renderTile);
 
 // FILTER: tile.json
 app.get('/:surveyId/filter/:key/tile.json', function(req, res, next){
@@ -250,6 +294,8 @@ app.get('/:surveyId/filter/:key/tile.json', function(req, res, next){
 });
 
 // Serve the UTF grids for a filter
+// TODO: handle the routing/http stuff ourselves and just use nodetiles as a
+// renderer, like with the PNG tiles
 app.get('/:surveyId/filter/:key/utfgrids*', function(req, res, next){
   var surveyId = req.params.surveyId;
   var key = req.params.key;
