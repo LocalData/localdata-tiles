@@ -279,6 +279,8 @@ function renderTile(req, res, next) {
   var surveyId = req.params.surveyId;
   var tile = res.locals.tile;
 
+  res.set('Content-Type', 'image/png');
+
   function respondUsingMap(map) {
     bufferStream(createRenderStream(map, tile), function (error, data) {
       if (error) {
