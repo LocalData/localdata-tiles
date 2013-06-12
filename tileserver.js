@@ -28,6 +28,9 @@ var memwatch = require('memwatch');
 var mongoose = require('mongoose');
 var path = require('path');
 var stream = require('stream');
+
+var etagCache = require('./lib/etag-cache');
+
 var app = module.exports = express();
 var db = null;
 
@@ -62,6 +65,14 @@ var connectionParams = {
 };
 
 app.use(express.logger());
+
+var useEtagCache = etagCache({
+  db: mongoose.connection,
+  collection: 'responseCollection',
+  geoField: 'geo_info.centroid',
+  timeField: 'created'
+});
+
 
 // Generate tilejson
 var tileJsonForSurvey = function(surveyId, host, filterPath) {
@@ -243,23 +254,30 @@ function bufferStream(stream, done) {
   });
 }
 
-/**
- * Set up a map for rendering
- */
-function renderTile(req, res, next) {
-  var key = req.params.key;
-  var surveyId = req.params.surveyId;
-  var tile = [];
-
+// Parse the tilename parameters from the URL and store as a res.locals.tile
+// array.
+function parseTileName(req, res, next) {
+  var tile = [0,0,0];
   try {
     tile[0] = parseInt(req.params.zoom, 10);
     tile[1] = parseInt(req.params.x, 10);
     tile[2] = parseInt(req.params.y, 10);
   } catch (e) {
     console.log(e);
-    res.send(500, 'Error parsing tile URL');
+    res.send(400, 'Error parsing tile URL');
     return;
   }
+  res.locals.tile = tile;
+  next();
+}
+
+/**
+ * Render a tile using a map that we create or an existing cached map.
+ */
+function renderTile(req, res, next) {
+  var key = req.params.key;
+  var surveyId = req.params.surveyId;
+  var tile = res.locals.tile;
 
   function respondUsingMap(map) {
     bufferStream(createRenderStream(map, tile), function (error, data) {
@@ -287,10 +305,10 @@ function renderTile(req, res, next) {
  * Handle requests for tiles
  */
 // Get a tile for a survey
-app.get('/:surveyId/tiles/:zoom/:x/:y.png', renderTile);
+app.get('/:surveyId/tiles/:zoom/:x/:y.png', parseTileName, useEtagCache, renderTile);
 
 // Get tile for a specific survey with a filter
-app.get('/:surveyId/filter/:key/tiles/:zoom/:x/:y.png', renderTile);
+app.get('/:surveyId/filter/:key/tiles/:zoom/:x/:y.png', parseTileName, useEtagCache, renderTile);
 
 // FILTER: tile.json
 app.get('/:surveyId/filter/:key/tile.json', function(req, res, next){
