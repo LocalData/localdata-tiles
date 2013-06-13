@@ -31,7 +31,7 @@ var stream = require('stream');
 var app = module.exports = express();
 var db = null;
 
-var Forms = require('lib/models/Form');
+var Forms = require('./lib/models/Form');
 
 memwatch.on('leak', function(info) {
   console.log("LEAK!", info);
