@@ -180,7 +180,7 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
       // Load and render the style template
       fs.readFile('./map/theme/filter.mss.template','utf8', function(error, styleTemplate) {
         var style = ejs.render(styleTemplate, {options: options});
-        console.log("Adding style");
+        console.log("Adding style", style);
         map.addStyle(style);
         map.addData(datasource);
 
