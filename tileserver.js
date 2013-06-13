@@ -1,16 +1,12 @@
 /**
- * Sample tileserver for LocalData
+ * LocalData Tileserver
  *
  * LD internal testing notes:
- * Small survey:
- * (master)nt$ time curl -L --compressed http://localhost:3001/ed6138d0-8a98-11e2-88bd-475906fdae2b/tiles/17/35287/48473.png > file.png
+ * Nortown:
+ * $ time curl -L --compressed http://localhost:3001/dbcb3590-0f59-11e2-81e6-bffd22dee0ec/filter/condition/tiles/14/4411/6055.png > file.png
  *
- *  Huge survey:
- *  e9bbcfc0-8cc2-11e2-82e5-ab06ad9f5ce0
  */
-'use strict';
-
-// var agent = require('webkit-devtools-agent');
+//'use strict';
 
 if (process.env.NODEFLY_KEY) {
   var NAME = process.env.NAME || 'local';
@@ -26,25 +22,24 @@ var fs = require('fs');
 var http = require('http');
 var memwatch = require('memwatch');
 var mongoose = require('mongoose');
+var nodetiles = require('nodetiles-core');
 var path = require('path');
 var stream = require('stream');
 var app = module.exports = express();
 var db = null;
 
+var MongoDataSource = require('../../nodetiles-mongodb/MongoDB.js');
+// var MongoDataSource = require('nodetiles-mongodb');
 var Forms = require('./lib/models/Form');
 
 memwatch.on('leak', function(info) {
   console.log("LEAK!", info);
 });
 
-
 memwatch.on('stats', function(stats) {
   // console.log('stats', stats);
 });
 
-var nodetiles = require('nodetiles-core');
-//var MongoDataSource = require('../nodetiles-mongodb/MongoDB.js');
-var MongoDataSource = require('nodetiles-mongodb');
 
 // Basic configuration
 var PORT = process.env.PORT || process.argv[2] || 3001;
@@ -117,9 +112,16 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
   // Path to the stylesheets
   map.assetsPath = path.join(__dirname, "map", "theme");
 
-  // Add the filter, if there is one.
+  // Fields to select
+  var select = {
+    'geo_info.geometry': 1,
+    'geo_info.humanReadableName': 1
+  };
+
+  // Add fields based on datasource
   if(filter !== undefined) {
-    console.log("FILTER", filter);
+    console.log("Filter select", filter);
+    select['responses.' + filter.key] = 1;
   }
 
   var datasource = new MongoDataSource({
@@ -130,14 +132,8 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
     query: {
       survey: surveyId
     },
-    select: {
-      'geo_info.geometry': 1,
-      'geo_info.humanReadableName': 1
-      // if there's a filter
-      // selectConditions['responses.' + this.filter.key] = 1;
-    }
+    select: select
   });
-
 
   // Add basic styles
   if(filter === undefined) {
@@ -148,10 +144,7 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
   if(filter !== undefined) {
 
     var form = Forms.getFlattenedForm(surveyId, function(error, form) {
-      console.log("ERROR???", error);
-      console.log("Form???", form);
       var i;
-
       var colors = [
           "#000000",
           "#ce40bf",
@@ -161,9 +154,8 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
           "#ee6d4a"
       ];
 
-      // generate options
+      // get the answers for a given quesiton
       var options = [];
-
       var question;
       for (i = 0; i < form.length; i++) {
         if(form[i].name === filter.key) {
@@ -172,10 +164,10 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
         }
       }
 
-      // question.answers = [{value: 'undefined', text: 'No answer'}].push(question.answers);
       // Use the first color for undefined answers
       question.answers.unshift({value: 'undefined', text: 'No answer'});
 
+      // Generate a style for each possible answer
       for (i = 0; i < question.answers.length; i++) {
         var s = {
           key: filter.key,
@@ -185,12 +177,11 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
         options.push(s);
       }
 
+      // Load and render the style template
       fs.readFile('./map/theme/filter.mss.template','utf8', function(error, styleTemplate) {
         var style = ejs.render(styleTemplate, {options: options});
-        // console.log("STYLE: ", style);
         console.log("Adding style");
         map.addStyle(style);
-
         map.addData(datasource);
 
         callback(map);
