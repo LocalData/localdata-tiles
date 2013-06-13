@@ -31,6 +31,8 @@ var stream = require('stream');
 var app = module.exports = express();
 var db = null;
 
+var Forms = require('lib/models/Form');
+
 memwatch.on('leak', function(info) {
   console.log("LEAK!", info);
 });
@@ -72,7 +74,7 @@ var tileJsonForSurvey = function(surveyId, host, filterPath) {
     path = path + '/' + filterPath;
   }
 
-  return {
+  var tilejson = {
     "basename" : "localdata.tiles",
     "bounds" : [-180, -85.05112877980659, 180, 85.05112877980659],
     "center" : [0, 0, 2],
@@ -90,6 +92,8 @@ var tileJsonForSurvey = function(surveyId, host, filterPath) {
     "version"     : "1.0.0",
     "webpage"     : "http://localdata.com"
   };
+
+  return tilejson;
 };
 
 
@@ -115,7 +119,7 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
 
   // Add the filter, if there is one.
   if(filter !== undefined) {
-    // mongooseParams.filter = filter;
+    console.log("FILTER", filter);
   }
 
   var datasource = new MongoDataSource({
@@ -140,11 +144,12 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
     map.addStyle(fs.readFileSync('./map/theme/style.mss','utf8'));
   }
 
-  // If there is a filter, we need to generate styles.
+  // If there is a filter, we dynamically generate styles.
   if(filter !== undefined) {
-    // Get the form!!
-    var form = datasource.getForm(surveyId, function(form, error) {
-      // console.log("ERROR???", error);
+
+    var form = Forms.getFlattenedForm(surveyId, function(error, form) {
+      console.log("ERROR???", error);
+      console.log("Form???", form);
       var i;
 
       var colors = [
@@ -317,7 +322,8 @@ app.configure('production', function(){
 });
 
 
-// Connect to the database and start the servert
+// Connect to the database and start the server
+console.log(connectionParams.uri);
 mongoose.connect(connectionParams.uri);
 db = mongoose.connection;
 
