@@ -5,6 +5,8 @@
  * Nortown:
  * $ time curl -L --compressed http://localhost:3001/dbcb3590-0f59-11e2-81e6-bffd22dee0ec/filter/condition/tiles/14/4411/6055.png > file.png
  *
+ * http://localhost:3001/dbcb3590-0f59-11e2-81e6-bffd22dee0ec/utfgrids/14/4411/6055.json > grid.txt
+ * http://localhost:3001/dbcb3590-0f59-11e2-81e6-bffd22dee0ec/utfgrids/14/4412/6055.json > grid.txt
  */
 //'use strict';
 
@@ -109,7 +111,7 @@ var mapForSurvey = {};
 
 /**
  * Create a Nodetiles map object for a given survet
- * @param  {Strign}   surveyId Id of the survey
+ * @param  {String}   surveyId Id of the survey
  * @param  {Function} callback Callback, param (map)
  * @param  {Object}   filter   Optional filter
  *                             Will color the map based on the filter
@@ -191,7 +193,6 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
       // Load and render the style template
       fs.readFile('./map/theme/filter.mss.template','utf8', function(error, styleTemplate) {
         var style = ejs.render(styleTemplate, {options: options});
-        console.log("Adding style", style);
         map.addStyle(style);
         map.addData(datasource);
 
@@ -361,7 +362,6 @@ app.configure('production', function(){
 
 
 // Connect to the database and start the server
-console.log(connectionParams.uri);
 mongoose.connect(connectionParams.uri);
 db = mongoose.connection;
 
