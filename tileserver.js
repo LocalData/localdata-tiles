@@ -33,8 +33,8 @@ var etagCache = require('./lib/etag-cache');
 var app = module.exports = express();
 var db = null;
 
-var MongoDataSource = require('../../nodetiles-mongodb/MongoDB.js');
-// var MongoDataSource = require('nodetiles-mongodb');
+// var MongoDataSource = require('../../nodetiles-mongodb/MongoDB.js');
+var MongoDataSource = require('nodetiles-mongodb');
 var Forms = require('./lib/models/Form');
 
 memwatch.on('leak', function(info) {
