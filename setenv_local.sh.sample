@@ -1,1 +1,4 @@
-export MONGO="mongodb://username:password@host:port/database";
+export MONGO="mongodb://username:password@host:port/database"
+export SSL_KEY="/Users/coolguy/.ssh/localdata-key.pem"
+export SSL_CERT="/Users/coolguy/.ssh/localdata-cert.pem"
+export PREFIX="//localhost:3443/tiles"
