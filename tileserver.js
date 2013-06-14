@@ -28,8 +28,7 @@ var stream = require('stream');
 var app = module.exports = express();
 var db = null;
 
-var MongoDataSource = require('../../nodetiles-mongodb/MongoDB.js');
-// var MongoDataSource = require('nodetiles-mongodb');
+var MongoDataSource = require('nodetiles-mongodb');
 var Forms = require('./lib/models/Form');
 
 memwatch.on('leak', function(info) {
@@ -44,6 +43,7 @@ memwatch.on('stats', function(stats) {
 // Basic configuration
 var PORT = process.env.PORT || process.argv[2] || 3001;
 var MONGO = process.env.MONGO || 'mongodb://localhost:27017/localdata_production';
+var PREFIX = process.env.PREFIX || '//localhost:3001';
 
 
 // Database options
@@ -62,7 +62,7 @@ app.use(express.logger());
 
 // Generate tilejson
 var tileJsonForSurvey = function(surveyId, host, filterPath) {
-  var path = surveyId;
+  var path = PREFIX + '/' + surveyId;
 
   // The tile path changes if we are adding data filters
   if (filterPath) {
@@ -75,7 +75,7 @@ var tileJsonForSurvey = function(surveyId, host, filterPath) {
     "center" : [0, 0, 2],
     "description" : "Lovingly crafted with Node and node-canvas.",
     "attribution" : "LocalData",
-    "grids"       : ['//' + host + '/' + path + "/utfgrids/{z}/{x}/{y}.json?callback={cb}"],
+    "grids"       : [path + "/utfgrids/{z}/{x}/{y}.json?callback={cb}"],
     "id"          : "map",
     "legend"      : "",
     "maxzoom"     : 30,
@@ -83,7 +83,7 @@ var tileJsonForSurvey = function(surveyId, host, filterPath) {
     "name"        : '',
     "scheme"      : 'xyz',
     "template"    : '',
-    "tiles"       : ['//' + host + '/' + path + "/tiles/{z}/{x}/{y}.png"], // FILTER HERE
+    "tiles"       : [path + "/tiles/{z}/{x}/{y}.png"], // FILTER HERE
     "version"     : "1.0.0",
     "webpage"     : "http://localdata.com"
   };
