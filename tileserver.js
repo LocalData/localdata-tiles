@@ -1,16 +1,14 @@
 /**
- * Sample tileserver for LocalData
+ * LocalData Tileserver
  *
  * LD internal testing notes:
- * Small survey:
- * (master)nt$ time curl -L --compressed http://localhost:3001/ed6138d0-8a98-11e2-88bd-475906fdae2b/tiles/17/35287/48473.png > file.png
+ * Nortown:
+ * $ time curl -L --compressed http://localhost:3001/dbcb3590-0f59-11e2-81e6-bffd22dee0ec/filter/condition/tiles/14/4411/6055.png > file.png
  *
- *  Huge survey:
- *  e9bbcfc0-8cc2-11e2-82e5-ab06ad9f5ce0
+ * http://localhost:3001/dbcb3590-0f59-11e2-81e6-bffd22dee0ec/utfgrids/14/4411/6055.json > grid.txt
+ * http://localhost:3001/dbcb3590-0f59-11e2-81e6-bffd22dee0ec/utfgrids/14/4412/6055.json > grid.txt
  */
-'use strict';
-
-// var agent = require('webkit-devtools-agent');
+//'use strict';
 
 if (process.env.NODEFLY_KEY) {
   var NAME = process.env.NAME || 'local';
@@ -26,6 +24,7 @@ var fs = require('fs');
 var http = require('http');
 var memwatch = require('memwatch');
 var mongoose = require('mongoose');
+var nodetiles = require('nodetiles-core');
 var path = require('path');
 var stream = require('stream');
 
@@ -34,22 +33,22 @@ var etagCache = require('./lib/etag-cache');
 var app = module.exports = express();
 var db = null;
 
+var MongoDataSource = require('nodetiles-mongodb');
+var Forms = require('./lib/models/Form');
+
 memwatch.on('leak', function(info) {
   console.log("LEAK!", info);
 });
-
 
 memwatch.on('stats', function(stats) {
   // console.log('stats', stats);
 });
 
-var nodetiles = require('nodetiles-core');
-//var MongoDataSource = require('../nodetiles-mongodb/MongoDB.js');
-var MongoDataSource = require('nodetiles-mongodb');
 
 // Basic configuration
 var PORT = process.env.PORT || process.argv[2] || 3001;
 var MONGO = process.env.MONGO || 'mongodb://localhost:27017/localdata_production';
+var PREFIX = process.env.PREFIX || '//localhost:3001';
 
 
 // Database options
@@ -76,20 +75,20 @@ var useEtagCache = etagCache({
 
 // Generate tilejson
 var tileJsonForSurvey = function(surveyId, host, filterPath) {
-  var path = surveyId;
+  var path = PREFIX + '/' + surveyId;
 
   // The tile path changes if we are adding data filters
   if (filterPath) {
     path = path + '/' + filterPath;
   }
 
-  return {
+  var tilejson = {
     "basename" : "localdata.tiles",
     "bounds" : [-180, -85.05112877980659, 180, 85.05112877980659],
     "center" : [0, 0, 2],
     "description" : "Lovingly crafted with Node and node-canvas.",
     "attribution" : "LocalData",
-    "grids"       : ['//' + host + '/' + path + "/utfgrids/{z}/{x}/{y}.json?callback={cb}"],
+    "grids"       : [path + "/utfgrids/{z}/{x}/{y}.json?callback={cb}"],
     "id"          : "map",
     "legend"      : "",
     "maxzoom"     : 30,
@@ -97,10 +96,12 @@ var tileJsonForSurvey = function(surveyId, host, filterPath) {
     "name"        : '',
     "scheme"      : 'xyz',
     "template"    : '',
-    "tiles"       : ['//' + host + '/' + path + "/tiles/{z}/{x}/{y}.png"], // FILTER HERE
+    "tiles"       : [path + "/tiles/{z}/{x}/{y}.png"], // FILTER HERE
     "version"     : "1.0.0",
     "webpage"     : "http://localdata.com"
   };
+
+  return tilejson;
 };
 
 
@@ -110,7 +111,7 @@ var mapForSurvey = {};
 
 /**
  * Create a Nodetiles map object for a given survet
- * @param  {Strign}   surveyId Id of the survey
+ * @param  {String}   surveyId Id of the survey
  * @param  {Function} callback Callback, param (map)
  * @param  {Object}   filter   Optional filter
  *                             Will color the map based on the filter
@@ -124,9 +125,16 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
   // Path to the stylesheets
   map.assetsPath = path.join(__dirname, "map", "theme");
 
-  // Add the filter, if there is one.
+  // Fields to select
+  var select = {
+    'geo_info.geometry': 1,
+    'geo_info.humanReadableName': 1
+  };
+
+  // Add fields based on datasource
   if(filter !== undefined) {
-    // mongooseParams.filter = filter;
+    console.log("Filter select", filter);
+    select['responses.' + filter.key] = 1;
   }
 
   var datasource = new MongoDataSource({
@@ -137,27 +145,19 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
     query: {
       survey: surveyId
     },
-    select: {
-      'geo_info.geometry': 1,
-      'geo_info.humanReadableName': 1
-      // if there's a filter
-      // selectConditions['responses.' + this.filter.key] = 1;
-    }
+    select: select
   });
-
 
   // Add basic styles
   if(filter === undefined) {
     map.addStyle(fs.readFileSync('./map/theme/style.mss','utf8'));
   }
 
-  // If there is a filter, we need to generate styles.
+  // If there is a filter, we dynamically generate styles.
   if(filter !== undefined) {
-    // Get the form!!
-    var form = datasource.getForm(surveyId, function(form, error) {
-      // console.log("ERROR???", error);
-      var i;
 
+    var form = Forms.getFlattenedForm(surveyId, function(error, form) {
+      var i;
       var colors = [
           "#000000",
           "#ce40bf",
@@ -167,9 +167,8 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
           "#ee6d4a"
       ];
 
-      // generate options
+      // get the answers for a given quesiton
       var options = [];
-
       var question;
       for (i = 0; i < form.length; i++) {
         if(form[i].name === filter.key) {
@@ -178,10 +177,10 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
         }
       }
 
-      // question.answers = [{value: 'undefined', text: 'No answer'}].push(question.answers);
       // Use the first color for undefined answers
       question.answers.unshift({value: 'undefined', text: 'No answer'});
 
+      // Generate a style for each possible answer
       for (i = 0; i < question.answers.length; i++) {
         var s = {
           key: filter.key,
@@ -191,12 +190,10 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
         options.push(s);
       }
 
+      // Load and render the style template
       fs.readFile('./map/theme/filter.mss.template','utf8', function(error, styleTemplate) {
         var style = ejs.render(styleTemplate, {options: options});
-        // console.log("STYLE: ", style);
-        console.log("Adding style");
         map.addStyle(style);
-
         map.addData(datasource);
 
         callback(map);
@@ -364,7 +361,7 @@ app.configure('production', function(){
 });
 
 
-// Connect to the database and start the servert
+// Connect to the database and start the server
 mongoose.connect(connectionParams.uri);
 db = mongoose.connection;
 
