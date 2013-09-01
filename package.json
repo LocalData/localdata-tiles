@@ -31,7 +31,7 @@
     "mongoose": "~3.6",
     "nodefly": "stable",
     "nodetiles-core": "https://github.com/localdata/nodetiles-core/tarball/filters",
-    "nodetiles-mongodb": "https://github.com/localdata/nodetiles-mongodb/tarball/master",
+    "nodetiles-mongodb": "https://github.com/localdata/nodetiles-mongodb/tarball/filters",
     "request": ">2",
     "webkit-devtools-agent": "0.1.1"
   },
