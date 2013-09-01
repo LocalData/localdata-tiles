@@ -178,6 +178,9 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
       }
 
       // Use the first color for undefined answers
+      if (!question.answers) {
+        question.answers = [];
+      }
       question.answers.unshift({value: 'undefined', text: 'No answer'});
 
       // Generate a style for each possible answer
@@ -330,7 +333,9 @@ app.get('/:surveyId/filter/:key/utfgrids*', function(req, res, next){
   var map = getOrCreateMapForSurveyId(surveyId, function(map){
     var route = nodetiles.route.utfGrid({ map: map });
     route(req, res, next);
-  }.bind(this), filter);
+  }, {
+    key: key
+  });
 });
 
 // Serve the UTF grids
