@@ -4,7 +4,7 @@ Map {
 
 <% for(var i = 0; i < options.length; i++) { %>
 <% var pair = options[i]; %>
-['<%= pair.key %>'='<%= pair.value %>'] {
+#localdata['<%= pair.key %>'='<%= pair.value %>'] {
 	polygon-fill: <%= pair.color %>;
 	line-color: <%= pair.color %>;
 	line-width:0.5;
