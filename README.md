@@ -11,7 +11,9 @@ To run locally:
 Clone and run `npm install`. You may need to run `brew install cairo` and confirm
 the installation succeeded (check `brew doctor`) to build this locally.
 
-Copy `setenv_local.sh.sample` and
+Copy `setenv_local.sh.sample`
+
+Run `node tileserver.js`
 
 To run on heroku:
 
