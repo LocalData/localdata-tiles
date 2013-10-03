@@ -13,7 +13,7 @@ the installation succeeded (check `brew doctor`) to build this locally.
 
 Copy `setenv_local.sh.sample`
 
-Run `node tileserver.js`
+Run `node server.js`
 
 To run on heroku:
 
