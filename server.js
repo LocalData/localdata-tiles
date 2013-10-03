@@ -48,7 +48,7 @@ memwatch.on('stats', function(stats) {
 // Basic configuration
 var PORT = process.env.PORT || process.argv[2] || 3001;
 var MONGO = process.env.MONGO || 'mongodb://localhost:27017/localdata_production';
-var PREFIX = process.env.PREFIX || '//localhost:3001';
+var PREFIX = process.env.PREFIX || '/tiles';
 
 
 // Database options
