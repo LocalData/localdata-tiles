@@ -7,6 +7,7 @@
  *
  * http://localhost:3001/dbcb3590-0f59-11e2-81e6-bffd22dee0ec/utfgrids/14/4411/6055.json > grid.txt
  * http://localhost:3001/dbcb3590-0f59-11e2-81e6-bffd22dee0ec/utfgrids/14/4412/6055.json > grid.txt
+ and the PNG: http://localhost:3001/dbcb3590-0f59-11e2-81e6-bffd22dee0ec/tiles/14/4412/6055.png
  */
 //'use strict';
 
@@ -49,7 +50,6 @@ memwatch.on('stats', function(stats) {
 var PORT = process.env.PORT || process.argv[2] || 3001;
 var MONGO = process.env.MONGO || 'mongodb://localhost:27017/localdata_production';
 var PREFIX = process.env.PREFIX || '/tiles';
-
 
 // Database options
 var connectionParams = {
@@ -116,7 +116,7 @@ var mapForSurvey = {};
  * @param  {Object}   filter   Optional filter
  *                             Will color the map based on the filter
  */
-var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
+var getOrCreateMapForSurveyId = function(surveyId, callback, options) {
   // TODO: cache the result of this, so we don't have to create a new datasource for every tile.
 
   // Set up the map
@@ -125,53 +125,57 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
   // Path to the stylesheets
   map.assetsPath = path.join(__dirname, "map", "theme");
 
-  // Fields to select
+  var query = {
+    survey: surveyId
+  };
+
   var select = {
     'geo_info.geometry': 1,
     'geo_info.humanReadableName': 1
   };
 
   // Add fields based on datasource
-  if(filter !== undefined) {
-    console.log("Filter select", filter);
-    select['responses.' + filter.key] = 1;
+  if(options.key !== undefined) {
+    select['responses.' + options.key] = 1;
+
+    if(options.val !== undefined) {
+      query['responses.' + options.key] = options.val;
+    }
   }
+
+  console.log("Using query and select", query, select);
 
   var datasource = new MongoDataSource({
     db: db,
     collectionName: 'responseCollection',
     projection: 'EPSG:4326',
     key: 'geo_info.centroid',
-    query: {
-      survey: surveyId
-    },
+    query: query,
     select: select
   });
 
   // Add basic styles
-  if(filter === undefined) {
+  if(options.key === undefined) {
     map.addStyle(fs.readFileSync('./map/theme/style.mss','utf8'));
   }
 
-  // If there is a filter, we dynamically generate styles.
-  if(filter !== undefined) {
-
+  // Dynamically generate styles for a filter
+  if(options.key !== undefined) {
     var form = Forms.getFlattenedForm(surveyId, function(error, form) {
       var i;
       var colors = [
-          "#000000",
-          "#ce40bf",
-          "#404ecd",
-          "#40cd98",
-          "#d4e647",
-          "#ee6d4a"
+        "#b7aba5", // First color used for blank entries
+        "#a743c3",
+        "#f15a24",
+        "#58aeff",
+        "#00ad00",
+        "#ffad00"
       ];
 
       // get the answers for a given quesiton
-      var options = [];
       var question;
       for (i = 0; i < form.length; i++) {
-        if(form[i].name === filter.key) {
+        if(form[i].name === options.key) {
           question = form[i];
           break;
         }
@@ -184,18 +188,19 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
       question.answers.unshift({value: 'undefined', text: 'No answer'});
 
       // Generate a style for each possible answer
+      var styles = [];
       for (i = 0; i < question.answers.length; i++) {
         var s = {
-          key: filter.key,
+          key: options.key,
           value: question.answers[i].value,
           color: colors[i]
         };
-        options.push(s);
+        styles.push(s);
       }
 
       // Load and render the style template
       fs.readFile('./map/theme/filter.mss.template','utf8', function(error, styleTemplate) {
-        var style = ejs.render(styleTemplate, {options: options});
+        var style = ejs.render(styleTemplate, {options: styles});
         map.addStyle(style);
         map.addData(datasource);
 
@@ -276,6 +281,7 @@ function parseTileName(req, res, next) {
  */
 function renderTile(req, res, next) {
   var key = req.params.key;
+  var val = req.params.val;
   var surveyId = req.params.surveyId;
   var tile = res.locals.tile;
 
@@ -292,14 +298,12 @@ function renderTile(req, res, next) {
     });
   }
 
-  if (key) {
-    // Filter!
-    getOrCreateMapForSurveyId(surveyId, respondUsingMap, {
-      key: key
-    });
-  } else {
-    getOrCreateMapForSurveyId(surveyId, respondUsingMap);
-  }
+  options = {}
+  if (key) options.key = key;
+  if (val) options.val = val;
+  console.log("Using options", options);
+
+  getOrCreateMapForSurveyId(surveyId, respondUsingMap, options);
 }
 
 
@@ -310,6 +314,7 @@ function renderTile(req, res, next) {
 app.get('/:surveyId/tiles/:zoom/:x/:y.png', parseTileName, useEtagCache, renderTile);
 
 // Get tile for a specific survey with a filter
+app.get('/:surveyId/filter/:key/:val/tiles/:zoom/:x/:y.png', parseTileName, useEtagCache, renderTile);
 app.get('/:surveyId/filter/:key/tiles/:zoom/:x/:y.png', parseTileName, useEtagCache, renderTile);
 
 // FILTER: tile.json
