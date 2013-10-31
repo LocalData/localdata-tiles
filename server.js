@@ -197,7 +197,7 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, options) {
     }
   }
 
-  console.log("Using query and select", query, select);
+  // console.log("Using query and select", query, select);
 
   var datasource = new MongoDataSource({
     db: db,
@@ -255,7 +255,6 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, options) {
       // Load and render the style template
       fs.readFile('./map/theme/filter.mss.template','utf8', function(error, styleTemplate) {
         var style = ejs.render(styleTemplate, {options: styles});
-        console.log(style);
         map.addStyle(style);
         map.addData(datasource);
         callback(map);
