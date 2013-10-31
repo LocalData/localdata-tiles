@@ -28,6 +28,7 @@ var mongoose = require('mongoose');
 var nodetiles = require('nodetiles-core');
 var path = require('path');
 var stream = require('stream');
+var __ = require('lodash');
 
 var etagCache = require('./lib/etag-cache');
 
@@ -35,7 +36,8 @@ var app = module.exports = express();
 var db = null;
 
 var MongoDataSource = require('nodetiles-mongodb');
-var Forms = require('./lib/models/Form');
+var Form = require('./lib/models/Form');
+var Response = require('./lib/models/Response');
 
 memwatch.on('leak', function(info) {
   console.log("LEAK!", info);
@@ -104,10 +106,61 @@ var tileJsonForSurvey = function(surveyId, host, filterPath) {
   return tilejson;
 };
 
+var statsBySurvey = {};
+var getStats = function(surveyId, callback) {
+  if (statsBySurvey[surveyId] !== undefined) {
+    callback(statsBySurvey[surveyId]);
+    return;
+  }
+
+  Response.find({ survey: surveyId }, function(error, responses){
+    console.log("STATS CACHE MISS");
+    var stats = {};
+    var i,
+        key;
+
+    for (i = 0; i < responses.length; i++) {
+      var r = responses[i].responses;
+      for (key in r) {
+        if (__.has(r, key)) {
+          var val = r[key];
+
+          if(__.has(stats, key)) {
+            if(__.has(stats[key], r[key])){
+              stats[key][val] += 1;
+            }else {
+              stats[key][val] = 1;
+            }
+          }else {
+            stats[key] = {};
+            stats[key][val] = 1;
+          }
+        }
+      }
+    }
+
+    // Calculate "no answer" responses
+    var summer = function(memo, num) {
+      return memo + num;
+    };
+
+    for (key in stats) {
+      if(__.has(stats, key)) {
+        var sum = __.reduce(stats[key], summer, 0);
+        var remainder = responses.length - sum;
+
+        stats[key]['no response'] = remainder;
+      }
+    }
+
+    statsBySurvey[surveyId] = stats;
+    callback(stats);
+  });
+}
+
 
 // Keep track of the different surveys we have maps for
 // TODO: use a fixed-size LRU cache, so this doesn't grow without bounds.
-var mapForSurvey = {};
 
 /**
  * Create a Nodetiles map object for a given survet
@@ -117,7 +170,8 @@ var mapForSurvey = {};
  *                             Will color the map based on the filter
  */
 var getOrCreateMapForSurveyId = function(surveyId, callback, options) {
-  // TODO: cache the result of this, so we don't have to create a new datasource for every tile.
+  // Cache the result of this, so we don't have to create a new datasource for every tile.
+  if (!options) options = {};
 
   // Set up the map
   var map = new nodetiles.Map();
@@ -154,17 +208,27 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, options) {
     select: select
   });
 
+  // If we're just rendering grids, we don't need to do anything with styles.
+  if(options.type === 'grid') {
+    callback(map);
+    return;
+  }
+
   // Add basic styles
   if(options.key === undefined) {
     map.addStyle(fs.readFileSync('./map/theme/style.mss','utf8'));
   }
 
   // Dynamically generate styles for a filter
+  // Actually, we need to get the stats here.
   if(options.key !== undefined) {
-    var form = Forms.getFlattenedForm(surveyId, function(error, form) {
+
+    // var form = Form.getFlattenedForm(surveyId, function(error, form) {
+    getStats(surveyId, function(stats) {
       var i;
       var colors = [
         "#b7aba5", // First color used for blank entries
+                   // Actually set in the style template
         "#a743c3",
         "#f15a24",
         "#58aeff",
@@ -172,38 +236,28 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, options) {
         "#ffad00"
       ];
 
-      // get the answers for a given quesiton
-      var question;
-      for (i = 0; i < form.length; i++) {
-        if(form[i].name === options.key) {
-          question = form[i];
-          break;
-        }
-      }
-
-      // Use the first color for undefined answers
-      if (!question.answers) {
-        question.answers = [];
-      }
-      question.answers.unshift({value: 'undefined', text: 'No answer'});
-
-      // Generate a style for each possible answer
+      var answers = __.keys(stats[options.key]);
       var styles = [];
-      for (i = 0; i < question.answers.length; i++) {
+      for (i = 0; i < answers.length; i++) {
         var s = {
           key: options.key,
-          value: question.answers[i].value,
-          color: colors[i]
+          value: answers[i],
+          color: colors[i + 1]
         };
+
+        if (answers[i] === 'no response') {
+          s.color = colors[0];
+        }
+
         styles.push(s);
       }
 
       // Load and render the style template
       fs.readFile('./map/theme/filter.mss.template','utf8', function(error, styleTemplate) {
         var style = ejs.render(styleTemplate, {options: styles});
+        console.log(style);
         map.addStyle(style);
         map.addData(datasource);
-
         callback(map);
       }.bind(this));
 
@@ -328,20 +382,30 @@ app.get('/:surveyId/filter/:key/tile.json', function(req, res, next){
   res.jsonp(tileJson);
 });
 
-// Serve the UTF grids for a filter
-// TODO: handle the routing/http stuff ourselves and just use nodetiles as a
-// renderer, like with the PNG tiles
-app.get('/:surveyId/filter/:key/utfgrids*', function(req, res, next){
+var renderGrids = function(req, res, next) {
   var surveyId = req.params.surveyId;
   var key = req.params.key;
+  var val = req.params.val;
+
   var filter = 'filter/' + key;
+  if(val !== undefined) filter = filter + '/' + val;
+
+  var options = { };
+  options.type = 'grid';
+  if (key !== undefined) options.key = key;
+  if (val !== undefined) options.val = val;
+
   var map = getOrCreateMapForSurveyId(surveyId, function(map){
     var route = nodetiles.route.utfGrid({ map: map });
     route(req, res, next);
-  }, {
-    key: key
-  });
-});
+  }, options);
+};
+
+// Serve the UTF grids for a filter
+// TODO: handle the routing/http stuff ourselves and just use nodetiles as a
+// renderer, like with the PNG tiles
+app.get('/:surveyId/filter/:key/:val/utfgrids*', renderGrids);
+app.get('/:surveyId/filter/:key/utfgrids*', renderGrids);
 
 // Serve the UTF grids
 app.get('/:surveyId/utfgrids*', function(req, res, next){
