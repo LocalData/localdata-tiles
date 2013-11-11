@@ -25,7 +25,6 @@ var fs = require('fs');
 var http = require('http');
 var knox = require('knox');
 
-var memwatch = require('memwatch');
 var mongoose = require('mongoose');
 var nodetiles = require('nodetiles-core');
 var path = require('path');
