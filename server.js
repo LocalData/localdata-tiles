@@ -39,6 +39,15 @@ var MongoDataSource = require('nodetiles-mongodb');
 var Form = require('./lib/models/Form');
 var Response = require('./lib/models/Response');
 
+if(settings.s3_key !== undefined) {
+  console.log("Using s3 ");
+  var s3client = knox.createClient({
+    key: settings.s3_key,
+    secret: settings.s3_secret,
+    bucket: settings.s3_bucket
+  });
+}
+
 memwatch.on('leak', function(info) {
   console.log("LEAK!", info);
 });
@@ -68,6 +77,13 @@ var connectionParams = {
 app.use(express.logger());
 
 var useEtagCache = etagCache({
+  db: mongoose.connection,
+  collection: 'responseCollection',
+  geoField: 'geo_info.centroid',
+  timeField: 'created'
+});
+
+var useS3Cache = s3Cache({
   db: mongoose.connection,
   collection: 'responseCollection',
   geoField: 'geo_info.centroid',
@@ -275,7 +291,6 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, options) {
   }
 };
 
-
 function createRenderStream(map, tile) {
   var passThrough = new stream.PassThrough();
   var bounds = nodetiles.projector.util.tileToMeters(tile[1], tile[2], tile[0]);
@@ -291,7 +306,6 @@ function createRenderStream(map, tile) {
   });
   return passThrough;
 }
-
 
 function bufferStream(stream, done) {
   var bufs = [];
@@ -339,6 +353,10 @@ function renderTile(req, res, next) {
   var tile = res.locals.tile;
 
   res.set('Content-Type', 'image/png');
+  options = {}
+  if (key) options.key = key;
+  if (val) options.val = val;
+  console.log("Using options", options);
 
   function respondUsingMap(map) {
     bufferStream(createRenderStream(map, tile), function (error, data) {
@@ -348,15 +366,14 @@ function renderTile(req, res, next) {
         return;
       }
       res.send(data);
+
+      // Save the file to S3
+      if(We are using S3) {
+        var name = req.originalUrl;
+        s3.put(name data);
+      }
     });
   }
-
-  options = {}
-  if (key) options.key = key;
-  if (val) options.val = val;
-  console.log("Using options", options);
-
-  getOrCreateMapForSurveyId(surveyId, respondUsingMap, options);
 }
 
 
@@ -375,8 +392,6 @@ app.get('/:surveyId/filter/:key/tile.json', function(req, res, next){
   var surveyId = req.params.surveyId;
   var key = req.params.key;
   var filter = 'filter/' + key;
-  // We don't need the filter in this situation
-  // var map = getOrCreateMapForSurveyId(surveyId);
   var tileJson = tileJsonForSurvey(surveyId, req.headers.host, filter);
   res.jsonp(tileJson);
 });
@@ -418,7 +433,6 @@ app.get('/:surveyId/utfgrids*', function(req, res, next){
 // tile.json
 app.get('/:surveyId/tile.json', function(req, res, next){
   var surveyId = req.params.surveyId;
-  // var map = getOrCreateMapForSurveyId(surveyId);
   var tileJson = tileJsonForSurvey(surveyId, req.headers.host);
   res.jsonp(tileJson);
 });
