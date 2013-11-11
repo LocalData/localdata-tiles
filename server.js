@@ -23,6 +23,8 @@ var ejs = require('ejs');
 var express = require('express');
 var fs = require('fs');
 var http = require('http');
+var knox = require('knox');
+
 var memwatch = require('memwatch');
 var mongoose = require('mongoose');
 var nodetiles = require('nodetiles-core');
@@ -31,6 +33,7 @@ var stream = require('stream');
 var __ = require('lodash');
 
 var etagCache = require('./lib/etag-cache');
+var s3Cache = require('./lib/s3-cache');
 
 var app = module.exports = express();
 var db = null;
@@ -38,24 +41,16 @@ var db = null;
 var MongoDataSource = require('nodetiles-mongodb');
 var Form = require('./lib/models/Form');
 var Response = require('./lib/models/Response');
+var s3client;
 
-if(settings.s3_key !== undefined) {
-  console.log("Using s3 ");
+if(process.env.S3_KEY !== undefined) {
+  console.log("Using s3");
   var s3client = knox.createClient({
-    key: settings.s3_key,
-    secret: settings.s3_secret,
-    bucket: settings.s3_bucket
+    key: process.env.S3_KEY,
+    secret: process.env.S3_SECRET,
+    bucket: process.env.S3_BUCKET
   });
 }
-
-memwatch.on('leak', function(info) {
-  console.log("LEAK!", info);
-});
-
-memwatch.on('stats', function(stats) {
-  // console.log('stats', stats);
-});
-
 
 // Basic configuration
 var PORT = process.env.PORT || process.argv[2] || 3001;
@@ -87,7 +82,8 @@ var useS3Cache = s3Cache({
   db: mongoose.connection,
   collection: 'responseCollection',
   geoField: 'geo_info.centroid',
-  timeField: 'created'
+  timeField: 'created',
+  s3client: s3client
 });
 
 
@@ -353,27 +349,46 @@ function renderTile(req, res, next) {
   var tile = res.locals.tile;
 
   res.set('Content-Type', 'image/png');
+
   options = {}
   if (key) options.key = key;
   if (val) options.val = val;
   console.log("Using options", options);
 
-  function respondUsingMap(map) {
-    bufferStream(createRenderStream(map, tile), function (error, data) {
-      if (error) {
-        console.log(error);
-        res.send(500);
-        return;
-      }
-      res.send(data);
+  var handleStream = function(error, data) {
+    if (error) {
+      console.log(error);
+      res.send(500);
+      return;
+    }
+    res.send(data);
 
-      // Save the file to S3
-      if(We are using S3) {
-        var name = req.originalUrl;
-        s3.put(name data);
-      }
-    });
-  }
+    // Cache the file using S3
+    console.log("S3client", s3client);
+    if(s3client) {
+      console.log("Putting file to s3");
+      var name = req.originalUrl;
+      var r = s3client.put(name, {
+        'Content-Length': data.length, //res.getHeader('content-length'),
+        'Content-Type': 'image/png'
+      });
+      r.on('response', function(res){
+        if (200 == res.statusCode) {
+          console.log('saved to %s', r.url);
+        }
+      });
+      r.on('error', function(foo, bar){
+        console.log("ERROR!", foo, bar);
+      })
+      r.end(data);
+    }
+  };
+
+  var respondUsingMap = function(map) {
+    bufferStream(createRenderStream(map, tile), handleStream);
+  };
+
+  getOrCreateMapForSurveyId(surveyId, respondUsingMap, options);
 }
 
 
