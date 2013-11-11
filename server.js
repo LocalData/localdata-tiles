@@ -396,11 +396,11 @@ function renderTile(req, res, next) {
  * Handle requests for tiles
  */
 // Get a tile for a survey
-app.get('/:surveyId/tiles/:zoom/:x/:y.png', parseTileName, useEtagCache, renderTile);
+app.get('/:surveyId/tiles/:zoom/:x/:y.png', parseTileName, useEtagCache, useS3Cache, renderTile);
 
 // Get tile for a specific survey with a filter
-app.get('/:surveyId/filter/:key/:val/tiles/:zoom/:x/:y.png', parseTileName, useEtagCache, renderTile);
-app.get('/:surveyId/filter/:key/tiles/:zoom/:x/:y.png', parseTileName, useEtagCache, renderTile);
+app.get('/:surveyId/filter/:key/:val/tiles/:zoom/:x/:y.png', parseTileName, useEtagCache, useS3Cache, renderTile);
+app.get('/:surveyId/filter/:key/tiles/:zoom/:x/:y.png', parseTileName, useEtagCache, useS3Cache, renderTile);
 
 // FILTER: tile.json
 app.get('/:surveyId/filter/:key/tile.json', function(req, res, next){
