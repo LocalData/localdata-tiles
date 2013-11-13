@@ -352,7 +352,6 @@ function renderTile(req, res, next) {
   options = {}
   if (key) options.key = key;
   if (val) options.val = val;
-  console.log("Using options", options);
 
   var handleStream = function(error, data) {
     if (error) {
@@ -380,6 +379,8 @@ app.get('/:surveyId/tiles/:zoom/:x/:y.png', parseTileName, useEtagCache, useS3Ca
 // Get tile for a specific survey with a filter
 app.get('/:surveyId/filter/:key/:val/tiles/:zoom/:x/:y.png', parseTileName, useEtagCache, useS3Cache, renderTile);
 app.get('/:surveyId/filter/:key/tiles/:zoom/:x/:y.png', parseTileName, useEtagCache, useS3Cache, renderTile);
+
+// FILTER: tile.json
 app.get('/:surveyId/filter/:key/tile.json', function(req, res, next){
   var surveyId = req.params.surveyId;
   var key = req.params.key;
