@@ -361,26 +361,6 @@ function renderTile(req, res, next) {
       return;
     }
     res.send(data);
-
-    // Cache the file using S3
-    console.log("S3client", s3client);
-    if(s3client) {
-      console.log("Putting file to s3");
-      var name = req.originalUrl;
-      var r = s3client.put(name, {
-        'Content-Length': data.length, //res.getHeader('content-length'),
-        'Content-Type': 'image/png'
-      });
-      r.on('response', function(res){
-        if (200 == res.statusCode) {
-          console.log('saved to %s', r.url);
-        }
-      });
-      r.on('error', function(foo, bar){
-        console.log("ERROR!", foo, bar);
-      })
-      r.end(data);
-    }
   };
 
   var respondUsingMap = function(map) {
@@ -400,8 +380,6 @@ app.get('/:surveyId/tiles/:zoom/:x/:y.png', parseTileName, useEtagCache, useS3Ca
 // Get tile for a specific survey with a filter
 app.get('/:surveyId/filter/:key/:val/tiles/:zoom/:x/:y.png', parseTileName, useEtagCache, useS3Cache, renderTile);
 app.get('/:surveyId/filter/:key/tiles/:zoom/:x/:y.png', parseTileName, useEtagCache, useS3Cache, renderTile);
-
-// FILTER: tile.json
 app.get('/:surveyId/filter/:key/tile.json', function(req, res, next){
   var surveyId = req.params.surveyId;
   var key = req.params.key;
