@@ -335,6 +335,7 @@ function parseTileName(req, res, next) {
     return;
   }
   res.locals.tile = tile;
+  // console.log("Setting res.locals.tile", res.locals.tile);
   next();
 }
 
