@@ -68,7 +68,15 @@ var connectionParams = {
   }
 };
 
+var allowCrossDomain = function(req, res, next) {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET');
+    res.header('Access-Control-Allow-Headers', 'Content-Type');
+    next();
+}
+
 app.use(express.logger());
+app.use(allowCrossDomain);
 
 var useEtagCache = etagCache({
   db: mongoose.connection,
@@ -207,8 +215,6 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, options) {
       query['responses.' + options.key] = options.val;
     }
   }
-
-  // console.log("Using query and select", query, select);
 
   var datasource = new MongoDataSource({
     db: db,
@@ -440,7 +446,6 @@ app.configure('production', function(){
   app.use(express.errorHandler());
   io.set('log level', 1); // reduce logging
 });
-
 
 // Connect to the database and start the server
 mongoose.connect(connectionParams.uri);
