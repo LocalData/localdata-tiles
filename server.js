@@ -396,6 +396,16 @@ app.get('/:surveyId/filter/:key/tile.json', function(req, res, next){
   res.jsonp(tileJson);
 });
 
+// FILTER: tile.json
+app.get('/:surveyId/filter/:key/:val/tile.json', function(req, res, next){
+  var surveyId = req.params.surveyId;
+  var key = req.params.key;
+  var filterPath = 'filter/' + key + '/' + req.params.val;
+  var tileJson = tileJsonForSurvey(surveyId, req.headers.host, filterPath);
+  res.jsonp(tileJson);
+});
+
+
 var renderGrids = function(req, res, next) {
   var surveyId = req.params.surveyId;
   var key = req.params.key;
