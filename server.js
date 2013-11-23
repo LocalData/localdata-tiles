@@ -204,7 +204,8 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, options) {
 
   var select = {
     'geo_info.geometry': 1,
-    'geo_info.humanReadableName': 1
+    'geo_info.humanReadableName': 1,
+    'object_id': 1
   };
 
   // Add fields based on datasource
