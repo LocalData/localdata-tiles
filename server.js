@@ -55,6 +55,7 @@ if(process.env.S3_KEY !== undefined) {
 var PORT = process.env.PORT || process.argv[2] || 3001;
 var MONGO = process.env.MONGO || 'mongodb://localhost:27017/localdata_production';
 var PREFIX = process.env.PREFIX || '/tiles';
+var NOANSWER = "no response";
 
 // Database options
 var connectionParams = {
@@ -214,8 +215,14 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, options) {
 
     if(options.val !== undefined) {
       query['responses.' + options.key] = options.val;
+
+      if (options.val === NOANSWER) {
+        query['responses.' + options.key] = { "$exists": false };
+      }
     }
   }
+
+  // https://localhost:3443/tiles/59faaef0-811a-11e2-86a3-530027a69dba/filter/condition/no%20response/tiles/18/66195/97045.png
 
   var datasource = new MongoDataSource({
     db: db,
@@ -400,8 +407,7 @@ app.get('/:surveyId/filter/:key/tile.json', function(req, res, next){
 // FILTER: tile.json
 app.get('/:surveyId/filter/:key/:val/tile.json', function(req, res, next){
   var surveyId = req.params.surveyId;
-  var key = req.params.key;
-  var filterPath = 'filter/' + key + '/' + req.params.val;
+  var filterPath = 'filter/' + req.params.key + '/' + req.params.val;
   var tileJson = tileJsonForSurvey(surveyId, req.headers.host, filterPath);
   res.jsonp(tileJson);
 });

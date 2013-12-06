@@ -21,3 +21,8 @@ To run on heroku:
 
 Push to heroku set the `MONGO` environment variable with a valid mongo
 connection string
+
+Fakeroku
+--------
+
+`PORT=4334 bin/fakeroku 3001`
