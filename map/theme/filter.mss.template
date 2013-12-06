@@ -2,9 +2,17 @@ Map {
 	background-color: rgba(0,0,0,0);
 }
 
+#localdata {
+	polygon-fill: #b7aba5;
+	line-color: #b7aba5;
+	line-width:0.5;
+	line-opacity:0.5;
+	polygon-opacity:0.85;
+}
+
 <% for(var i = 0; i < options.length; i++) { %>
 <% var pair = options[i]; %>
-['<%= pair.key %>'='<%= pair.value %>'] {
+#localdata['<%= pair.key %>'='<%= pair.value %>'] {
 	polygon-fill: <%= pair.color %>;
 	line-color: <%= pair.color %>;
 	line-width:0.5;

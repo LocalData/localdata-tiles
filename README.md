@@ -6,14 +6,23 @@ This is an experimental tileserver for use with the **[nodetiles-core](http://gi
 Install instructions
 --------------------
 
-To run locally:
+To run locally on OS X:
 
 Clone and run `npm install`. You may need to run `brew install cairo` and confirm
-the installation succeeded (check `brew doctor`) to build this locally.
+the installation succeeded (check `brew doctor`). You may also need to `brew install` `fontconfig` and `pixman`.
 
-Copy `setenv_local.sh.sample` and
+If you get more Cairo-related errors, you may need to explicitly say where to look for libraries: `export PKG_CONFIG_PATH=/usr/X11/lib/pkgconfig`
+
+Copy `setenv_local.sh.sample` and update the values to match your environment.
+
+Run `node server.js`
 
 To run on heroku:
 
 Push to heroku set the `MONGO` environment variable with a valid mongo
 connection string
+
+Fakeroku
+--------
+
+`PORT=4334 bin/fakeroku 3001`

@@ -7,6 +7,7 @@
  *
  * http://localhost:3001/dbcb3590-0f59-11e2-81e6-bffd22dee0ec/utfgrids/14/4411/6055.json > grid.txt
  * http://localhost:3001/dbcb3590-0f59-11e2-81e6-bffd22dee0ec/utfgrids/14/4412/6055.json > grid.txt
+ and the PNG: http://localhost:3001/dbcb3590-0f59-11e2-81e6-bffd22dee0ec/tiles/14/4412/6055.png
  */
 //'use strict';
 
@@ -22,34 +23,39 @@ var ejs = require('ejs');
 var express = require('express');
 var fs = require('fs');
 var http = require('http');
-var memwatch = require('memwatch');
+var knox = require('knox');
+
 var mongoose = require('mongoose');
 var nodetiles = require('nodetiles-core');
 var path = require('path');
 var stream = require('stream');
+var __ = require('lodash');
 
 var etagCache = require('./lib/etag-cache');
+var s3Cache = require('./lib/s3-cache');
 
 var app = module.exports = express();
 var db = null;
 
 var MongoDataSource = require('nodetiles-mongodb');
-var Forms = require('./lib/models/Form');
+var Form = require('./lib/models/Form');
+var Response = require('./lib/models/Response');
+var s3client;
 
-memwatch.on('leak', function(info) {
-  console.log("LEAK!", info);
-});
-
-memwatch.on('stats', function(stats) {
-  // console.log('stats', stats);
-});
-
+if(process.env.S3_KEY !== undefined) {
+  console.log("Using s3");
+  var s3client = knox.createClient({
+    key: process.env.S3_KEY,
+    secret: process.env.S3_SECRET,
+    bucket: process.env.S3_BUCKET
+  });
+}
 
 // Basic configuration
 var PORT = process.env.PORT || process.argv[2] || 3001;
 var MONGO = process.env.MONGO || 'mongodb://localhost:27017/localdata_production';
-var PREFIX = process.env.PREFIX || '//localhost:3001';
-
+var PREFIX = process.env.PREFIX || '/tiles';
+var NOANSWER = "no response";
 
 // Database options
 var connectionParams = {
@@ -63,13 +69,29 @@ var connectionParams = {
   }
 };
 
+var allowCrossDomain = function(req, res, next) {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET');
+    res.header('Access-Control-Allow-Headers', 'Content-Type');
+    next();
+}
+
 app.use(express.logger());
+app.use(allowCrossDomain);
 
 var useEtagCache = etagCache({
   db: mongoose.connection,
   collection: 'responseCollection',
   geoField: 'geo_info.centroid',
   timeField: 'created'
+});
+
+var useS3Cache = s3Cache({
+  db: mongoose.connection,
+  collection: 'responseCollection',
+  geoField: 'geo_info.centroid',
+  timeField: 'created',
+  s3client: s3client
 });
 
 
@@ -104,10 +126,61 @@ var tileJsonForSurvey = function(surveyId, host, filterPath) {
   return tilejson;
 };
 
+var statsBySurvey = {};
+var getStats = function(surveyId, callback) {
+  if (statsBySurvey[surveyId] !== undefined) {
+    callback(statsBySurvey[surveyId]);
+    return;
+  }
+
+  Response.find({ survey: surveyId }, function(error, responses){
+    console.log("STATS CACHE MISS");
+    var stats = {};
+    var i,
+        key;
+
+    for (i = 0; i < responses.length; i++) {
+      var r = responses[i].responses;
+      for (key in r) {
+        if (__.has(r, key)) {
+          var val = r[key];
+
+          if(__.has(stats, key)) {
+            if(__.has(stats[key], r[key])){
+              stats[key][val] += 1;
+            }else {
+              stats[key][val] = 1;
+            }
+          }else {
+            stats[key] = {};
+            stats[key][val] = 1;
+          }
+        }
+      }
+    }
+
+    // Calculate "no answer" responses
+    var summer = function(memo, num) {
+      return memo + num;
+    };
+
+    for (key in stats) {
+      if(__.has(stats, key)) {
+        var sum = __.reduce(stats[key], summer, 0);
+        var remainder = responses.length - sum;
+
+        stats[key]['no response'] = remainder;
+      }
+    }
+
+    statsBySurvey[surveyId] = stats;
+    callback(stats);
+  });
+}
+
 
 // Keep track of the different surveys we have maps for
 // TODO: use a fixed-size LRU cache, so this doesn't grow without bounds.
-var mapForSurvey = {};
 
 /**
  * Create a Nodetiles map object for a given survet
@@ -116,8 +189,9 @@ var mapForSurvey = {};
  * @param  {Object}   filter   Optional filter
  *                             Will color the map based on the filter
  */
-var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
-  // TODO: cache the result of this, so we don't have to create a new datasource for every tile.
+var getOrCreateMapForSurveyId = function(surveyId, callback, options) {
+  // Cache the result of this, so we don't have to create a new datasource for every tile.
+  if (!options) options = {};
 
   // Set up the map
   var map = new nodetiles.Map();
@@ -125,77 +199,89 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
   // Path to the stylesheets
   map.assetsPath = path.join(__dirname, "map", "theme");
 
-  // Fields to select
+  var query = {
+    survey: surveyId
+  };
+
   var select = {
     'geo_info.geometry': 1,
-    'geo_info.humanReadableName': 1
+    'geo_info.humanReadableName': 1,
+    'object_id': 1
   };
 
   // Add fields based on datasource
-  if(filter !== undefined) {
-    console.log("Filter select", filter);
-    select['responses.' + filter.key] = 1;
+  if(options.key !== undefined) {
+    select['responses.' + options.key] = 1;
+
+    if(options.val !== undefined) {
+      query['responses.' + options.key] = options.val;
+
+      if (options.val === NOANSWER) {
+        query['responses.' + options.key] = { "$exists": false };
+      }
+    }
   }
+
+  // https://localhost:3443/tiles/59faaef0-811a-11e2-86a3-530027a69dba/filter/condition/no%20response/tiles/18/66195/97045.png
 
   var datasource = new MongoDataSource({
     db: db,
     collectionName: 'responseCollection',
     projection: 'EPSG:4326',
     key: 'geo_info.centroid',
-    query: {
-      survey: surveyId
-    },
+    query: query,
     select: select
   });
 
+  // If we're just rendering grids, we don't need to do anything with styles.
+  if(options.type === 'grid') {
+    callback(map);
+    return;
+  }
+
   // Add basic styles
-  if(filter === undefined) {
+  if(options.key === undefined) {
     map.addStyle(fs.readFileSync('./map/theme/style.mss','utf8'));
   }
 
-  // If there is a filter, we dynamically generate styles.
-  if(filter !== undefined) {
+  // Dynamically generate styles for a filter
+  // Actually, we need to get the stats here.
+  if(options.key !== undefined) {
 
-    var form = Forms.getFlattenedForm(surveyId, function(error, form) {
+    // var form = Form.getFlattenedForm(surveyId, function(error, form) {
+    getStats(surveyId, function(stats) {
       var i;
       var colors = [
-          "#000000",
-          "#ce40bf",
-          "#404ecd",
-          "#40cd98",
-          "#d4e647",
-          "#ee6d4a"
+        "#b7aba5", // First color used for blank entries
+                   // Actually set in the style template
+        "#a743c3",
+        "#f15a24",
+        "#58aeff",
+        "#00ad00",
+        "#ffad00"
       ];
 
-      // get the answers for a given quesiton
-      var options = [];
-      var question;
-      for (i = 0; i < form.length; i++) {
-        if(form[i].name === filter.key) {
-          question = form[i];
-          break;
-        }
-      }
-
-      // Use the first color for undefined answers
-      question.answers.unshift({value: 'undefined', text: 'No answer'});
-
-      // Generate a style for each possible answer
-      for (i = 0; i < question.answers.length; i++) {
+      var answers = __.keys(stats[options.key]);
+      var styles = [];
+      for (i = 0; i < answers.length; i++) {
         var s = {
-          key: filter.key,
-          value: question.answers[i].value,
-          color: colors[i]
+          key: options.key,
+          value: answers[i],
+          color: colors[i + 1]
         };
-        options.push(s);
+
+        if (answers[i] === 'no response') {
+          s.color = colors[0];
+        }
+
+        styles.push(s);
       }
 
       // Load and render the style template
       fs.readFile('./map/theme/filter.mss.template','utf8', function(error, styleTemplate) {
-        var style = ejs.render(styleTemplate, {options: options});
+        var style = ejs.render(styleTemplate, {options: styles});
         map.addStyle(style);
         map.addData(datasource);
-
         callback(map);
       }.bind(this));
 
@@ -214,7 +300,6 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, filter) {
   }
 };
 
-
 function createRenderStream(map, tile) {
   var passThrough = new stream.PassThrough();
   var bounds = nodetiles.projector.util.tileToMeters(tile[1], tile[2], tile[0]);
@@ -230,7 +315,6 @@ function createRenderStream(map, tile) {
   });
   return passThrough;
 }
-
 
 function bufferStream(stream, done) {
   var bufs = [];
@@ -265,6 +349,7 @@ function parseTileName(req, res, next) {
     return;
   }
   res.locals.tile = tile;
+  // console.log("Setting res.locals.tile", res.locals.tile);
   next();
 }
 
@@ -273,30 +358,30 @@ function parseTileName(req, res, next) {
  */
 function renderTile(req, res, next) {
   var key = req.params.key;
+  var val = req.params.val;
   var surveyId = req.params.surveyId;
   var tile = res.locals.tile;
 
   res.set('Content-Type', 'image/png');
 
-  function respondUsingMap(map) {
-    bufferStream(createRenderStream(map, tile), function (error, data) {
-      if (error) {
-        console.log(error);
-        res.send(500);
-        return;
-      }
-      res.send(data);
-    });
-  }
+  options = {}
+  if (key) options.key = key;
+  if (val) options.val = val;
 
-  if (key) {
-    // Filter!
-    getOrCreateMapForSurveyId(surveyId, respondUsingMap, {
-      key: key
-    });
-  } else {
-    getOrCreateMapForSurveyId(surveyId, respondUsingMap);
-  }
+  var handleStream = function(error, data) {
+    if (error) {
+      console.log(error);
+      res.send(500);
+      return;
+    }
+    res.send(data);
+  };
+
+  var respondUsingMap = function(map) {
+    bufferStream(createRenderStream(map, tile), handleStream);
+  };
+
+  getOrCreateMapForSurveyId(surveyId, respondUsingMap, options);
 }
 
 
@@ -304,34 +389,54 @@ function renderTile(req, res, next) {
  * Handle requests for tiles
  */
 // Get a tile for a survey
-app.get('/:surveyId/tiles/:zoom/:x/:y.png', parseTileName, useEtagCache, renderTile);
+app.get('/:surveyId/tiles/:zoom/:x/:y.png', parseTileName, useEtagCache, useS3Cache, renderTile);
 
 // Get tile for a specific survey with a filter
-app.get('/:surveyId/filter/:key/tiles/:zoom/:x/:y.png', parseTileName, useEtagCache, renderTile);
+app.get('/:surveyId/filter/:key/:val/tiles/:zoom/:x/:y.png', parseTileName, useEtagCache, useS3Cache, renderTile);
+app.get('/:surveyId/filter/:key/tiles/:zoom/:x/:y.png', parseTileName, useEtagCache, useS3Cache, renderTile);
 
 // FILTER: tile.json
 app.get('/:surveyId/filter/:key/tile.json', function(req, res, next){
   var surveyId = req.params.surveyId;
   var key = req.params.key;
   var filter = 'filter/' + key;
-  // We don't need the filter in this situation
-  // var map = getOrCreateMapForSurveyId(surveyId);
   var tileJson = tileJsonForSurvey(surveyId, req.headers.host, filter);
   res.jsonp(tileJson);
 });
 
-// Serve the UTF grids for a filter
-// TODO: handle the routing/http stuff ourselves and just use nodetiles as a
-// renderer, like with the PNG tiles
-app.get('/:surveyId/filter/:key/utfgrids*', function(req, res, next){
+// FILTER: tile.json
+app.get('/:surveyId/filter/:key/:val/tile.json', function(req, res, next){
+  var surveyId = req.params.surveyId;
+  var filterPath = 'filter/' + req.params.key + '/' + req.params.val;
+  var tileJson = tileJsonForSurvey(surveyId, req.headers.host, filterPath);
+  res.jsonp(tileJson);
+});
+
+
+var renderGrids = function(req, res, next) {
   var surveyId = req.params.surveyId;
   var key = req.params.key;
+  var val = req.params.val;
+
   var filter = 'filter/' + key;
+  if(val !== undefined) filter = filter + '/' + val;
+
+  var options = { };
+  options.type = 'grid';
+  if (key !== undefined) options.key = key;
+  if (val !== undefined) options.val = val;
+
   var map = getOrCreateMapForSurveyId(surveyId, function(map){
     var route = nodetiles.route.utfGrid({ map: map });
     route(req, res, next);
-  }.bind(this), filter);
-});
+  }, options);
+};
+
+// Serve the UTF grids for a filter
+// TODO: handle the routing/http stuff ourselves and just use nodetiles as a
+// renderer, like with the PNG tiles
+app.get('/:surveyId/filter/:key/:val/utfgrids*', renderGrids);
+app.get('/:surveyId/filter/:key/utfgrids*', renderGrids);
 
 // Serve the UTF grids
 app.get('/:surveyId/utfgrids*', function(req, res, next){
@@ -345,7 +450,6 @@ app.get('/:surveyId/utfgrids*', function(req, res, next){
 // tile.json
 app.get('/:surveyId/tile.json', function(req, res, next){
   var surveyId = req.params.surveyId;
-  // var map = getOrCreateMapForSurveyId(surveyId);
   var tileJson = tileJsonForSurvey(surveyId, req.headers.host);
   res.jsonp(tileJson);
 });
@@ -359,7 +463,6 @@ app.configure('production', function(){
   app.use(express.errorHandler());
   io.set('log level', 1); // reduce logging
 });
-
 
 // Connect to the database and start the server
 mongoose.connect(connectionParams.uri);

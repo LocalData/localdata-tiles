@@ -8,8 +8,8 @@
  * the actual app.
  *
  * Usage:
- *   PORT=3443 bin/fakeroku 3000
- * Listens on port 3443 for HTTPS requests and forwards them to port 3000 over HTTP.
+ *   PORT=4334 bin/fakeroku 3001
+ * Listens on port 4334 for HTTPS requests and forwards them to port 3001 over HTTP.
  */
 
 var https = require('https');
