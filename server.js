@@ -71,10 +71,10 @@ var connectionParams = {
 };
 
 function allowCrossDomain(req, res, next) {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET');
-    res.header('Access-Control-Allow-Headers', 'Content-Type');
-    next();
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  next();
 }
 
 app.use(express.logger());
@@ -128,7 +128,7 @@ var tileJsonForSurvey = function(surveyId, host, filterPath) {
 };
 
 var statsBySurvey = {};
-var getStats = function(surveyId, callback) {
+function getStats(surveyId, callback) {
   if (statsBySurvey[surveyId] !== undefined) {
     callback(statsBySurvey[surveyId]);
     return;
@@ -177,7 +177,7 @@ var getStats = function(surveyId, callback) {
     statsBySurvey[surveyId] = stats;
     callback(stats);
   });
-};
+}
 
 
 // Keep track of the different surveys we have maps for
@@ -420,7 +420,7 @@ app.get('/:surveyId/filter/:key/:val/tile.json', function(req, res, next){
 });
 
 
-var renderGrids = function(req, res, next) {
+function renderGrids(req, res, next) {
   var surveyId = req.params.surveyId;
   var key = req.params.key;
   var val = req.params.val;
@@ -445,7 +445,7 @@ var renderGrids = function(req, res, next) {
     var route = nodetiles.route.utfGrid({ map: map });
     route(req, res, next);
   }, options);
-};
+}
 
 // Serve the UTF grids for a filter
 // TODO: handle the routing/http stuff ourselves and just use nodetiles as a
