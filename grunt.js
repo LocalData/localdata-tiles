@@ -132,15 +132,15 @@ module.exports = function(grunt) {
     //  until documentation has been written.
     server: {
       nodetiles: nodetiles,
-      
+
       // Ensure the favicon is mapped correctly.
-      files: { 
+      files: {
         "favicon.ico": "favicon.ico"
       },
 
       debug: {
         // Ensure the favicon is mapped correctly.
-        files: { 
+        files: {
           "favicon.ico": "favicon.ico"
         },
 
