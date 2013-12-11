@@ -9,6 +9,7 @@
  * http://localhost:3001/dbcb3590-0f59-11e2-81e6-bffd22dee0ec/utfgrids/14/4412/6055.json > grid.txt
  and the PNG: http://localhost:3001/dbcb3590-0f59-11e2-81e6-bffd22dee0ec/tiles/14/4412/6055.png
  */
+
 //'use strict';
 
 if (process.env.NODEFLY_KEY) {
@@ -69,7 +70,7 @@ var connectionParams = {
   }
 };
 
-var allowCrossDomain = function(req, res, next) {
+function allowCrossDomain(req, res, next) {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET');
     res.header('Access-Control-Allow-Headers', 'Content-Type');
@@ -176,7 +177,7 @@ var getStats = function(surveyId, callback) {
     statsBySurvey[surveyId] = stats;
     callback(stats);
   });
-}
+};
 
 
 // Keep track of the different surveys we have maps for
@@ -189,9 +190,11 @@ var getStats = function(surveyId, callback) {
  * @param  {Object}   filter   Optional filter
  *                             Will color the map based on the filter
  */
-var getOrCreateMapForSurveyId = function(surveyId, callback, options) {
+function getOrCreateMapForSurveyId(surveyId, callback, options) {
   // Cache the result of this, so we don't have to create a new datasource for every tile.
-  if (!options) options = {};
+  if (!options) {
+    options = {};
+  }
 
   // Set up the map
   var map = new nodetiles.Map();
@@ -298,7 +301,7 @@ var getOrCreateMapForSurveyId = function(surveyId, callback, options) {
 
     fs.readFile('./map/theme/style.mss','utf8', readFileCB);
   }
-};
+}
 
 function createRenderStream(map, tile) {
   var passThrough = new stream.PassThrough();
@@ -364,9 +367,13 @@ function renderTile(req, res, next) {
 
   res.set('Content-Type', 'image/png');
 
-  options = {}
-  if (key) options.key = key;
-  if (val) options.val = val;
+  var options = {};
+  if (key) {
+    options.key = key;
+  }
+  if (val) {
+    options.val = val;
+  }
 
   var handleStream = function(error, data) {
     if (error) {
@@ -418,13 +425,21 @@ var renderGrids = function(req, res, next) {
   var key = req.params.key;
   var val = req.params.val;
 
+  // Set up the filter path
   var filter = 'filter/' + key;
-  if(val !== undefined) filter = filter + '/' + val;
+  if(val !== undefined) {
+    filter = filter + '/' + val;
+  }
 
+  // We'll use these options to create the map
   var options = { };
   options.type = 'grid';
-  if (key !== undefined) options.key = key;
-  if (val !== undefined) options.val = val;
+  if (key !== undefined) {
+    options.key = key;
+  }
+  if (val !== undefined) {
+    options.val = val;
+  }
 
   var map = getOrCreateMapForSurveyId(surveyId, function(map){
     var route = nodetiles.route.utfGrid({ map: map });
@@ -461,7 +476,10 @@ app.configure('development', function(){
 
 app.configure('production', function(){
   app.use(express.errorHandler());
-  io.set('log level', 1); // reduce logging
+
+  // TODO
+  // Requires socket.io
+  // io.set('log level', 1); // reduce logging
 });
 
 // Connect to the database and start the server
