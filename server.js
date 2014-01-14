@@ -100,6 +100,10 @@ var useS3Cache = s3Cache({
 var tileJsonForSurvey = function(surveyId, host, filterPath) {
   var path = PREFIX + '/' + surveyId;
 
+  if (!process.env.PREFIX) {
+    path = 'https://' + host + '/' + path;
+  }
+
   // The tile path changes if we are adding data filters
   if (filterPath) {
     path = path + '/' + filterPath;
