@@ -12,6 +12,16 @@
 
 'use strict';
 
+var settings = require('./lib/settings');
+
+if (process.env.NODETIME_ACCOUNT_KEY) {
+  console.log('Nodetime profiling enabled. App name: ' + settings.appName);
+  require('nodetime').profile({
+    accountKey: process.env.NODETIME_ACCOUNT_KEY,
+    appName: settings.appName
+  });
+}
+
 var express = require('express');
 var http = require('http');
 
@@ -21,7 +31,6 @@ var app = module.exports = express();
 var db = null;
 
 var mongo = require('./lib/mongo');
-var settings = require('./lib/settings');
 var routes = require('./lib/routes');
 
 // Basic configuration
