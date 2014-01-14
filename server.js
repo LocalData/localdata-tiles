@@ -55,7 +55,6 @@ if(process.env.S3_KEY !== undefined) {
 // Basic configuration
 var PORT = process.env.PORT || process.argv[2] || 3001;
 var MONGO = process.env.MONGO || 'mongodb://localhost:27017/localdata_production';
-var PREFIX = process.env.PREFIX || '/tiles';
 var NOANSWER = "no response";
 
 // Database options
@@ -98,11 +97,13 @@ var useS3Cache = s3Cache({
 
 // Generate tilejson
 var tileJsonForSurvey = function(surveyId, host, filterPath) {
-  var path = PREFIX + '/' + surveyId;
-
-  if (!process.env.PREFIX) {
-    path = 'https://' + host + path;
+  var path;
+  path = 'https://' + host;
+  if (process.env.PREFIX) {
+    path = process.env.PREFIX;
   }
+  path +=  '/' + surveyId;
+
 
   // The tile path changes if we are adding data filters
   if (filterPath) {
