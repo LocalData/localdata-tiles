@@ -101,7 +101,7 @@ var tileJsonForSurvey = function(surveyId, host, filterPath) {
   var path = PREFIX + '/' + surveyId;
 
   if (!process.env.PREFIX) {
-    path = 'https://' + host + '/' + path;
+    path = 'https://' + host + path;
   }
 
   // The tile path changes if we are adding data filters
