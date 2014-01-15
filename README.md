@@ -13,9 +13,9 @@ the installation succeeded (check `brew doctor`). You may also need to `brew ins
 
 If you get more Cairo-related errors, you may need to explicitly say where to look for libraries: `export PKG_CONFIG_PATH=/usr/X11/lib/pkgconfig`
 
-Copy `setenv_local.sh.sample` and update the values to match your environment.
+Copy `sample.env` and update the values to match your environment.
 
-Run `node server.js`
+Using [env-run](https://npmjs.org/package/envrun), run `envrun -e your-brand-new.env -p 3001 node server.js`
 
 To run on heroku:
 
@@ -25,4 +25,11 @@ connection string
 Fakeroku
 --------
 
-`PORT=4334 bin/fakeroku 3001`
+You'll need an SSL key and cert in:
+
+```
+/Users/coolguy/.ssh/localdata-key.pem
+/Users/coolguy/.ssh/localdata-cert.pem
+```
+
+Then run `PORT=4334 bin/fakeroku 3001`
