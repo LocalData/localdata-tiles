@@ -37,6 +37,6 @@
   },
   "devDependencies": {
     "http-proxy": "~0.10.2",
-    "webkit-devtools-agent": "0.1.1",
+    "webkit-devtools-agent": "0.1.1"
   }
 }
