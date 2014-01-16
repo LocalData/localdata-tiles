@@ -19,7 +19,8 @@ geodata
 .svn
 CVS
 
-.env
+*.env
+!sample.env
 node_modules
 *.sh
 file.png
