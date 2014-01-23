@@ -30,7 +30,7 @@
     "mongoose": "~3.8.4",
     "newrelic": "~1.2.0",
     "nodefly": "stable",
-    "nodetiles-core": "LocalData/nodetiles-core",
+    "nodetiles-core": "LocalData/nodetiles-core#0.1.0",
     "nodetiles-mongodb": "https://github.com/localdata/nodetiles-mongodb/tarball/filters",
     "request": "2.27.x"
   },
