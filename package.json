@@ -1,6 +1,6 @@
 {
   "name": "nodetiles-server-example",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Joyful map rendering with Node.js.",
   "contributors": [
     {
@@ -31,7 +31,7 @@
     "newrelic": "~1.2.0",
     "nodefly": "stable",
     "nodetiles-core": "LocalData/nodetiles-core#0.1.0",
-    "nodetiles-mongodb": "https://github.com/localdata/nodetiles-mongodb/tarball/filters",
+    "nodetiles-mongodb": "LocalData/nodetiles-mongodb#21a572576a02b0f9cb6d443ab379a7a5e4da6b40",
     "request": "2.27.x"
   },
   "devDependencies": {
