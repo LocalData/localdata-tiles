@@ -40,7 +40,7 @@ function allowCrossDomain(req, res, next) {
     next();
 }
 
-app.use(express.logger());
+app.use(express.logger(settings.expressLogger));
 app.use(allowCrossDomain);
 
 // Configure Express app
