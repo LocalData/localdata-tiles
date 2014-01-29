@@ -32,7 +32,8 @@
     "nodefly": "stable",
     "nodetiles-core": "LocalData/nodetiles-core#0.1.0",
     "nodetiles-mongodb": "LocalData/nodetiles-mongodb#21a572576a02b0f9cb6d443ab379a7a5e4da6b40",
-    "request": "2.27.x"
+    "request": "2.27.x",
+    "q": "~1.0.0"
   },
   "devDependencies": {
     "http-proxy": "~0.10.2",
