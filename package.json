@@ -30,7 +30,7 @@
     "mongoose": "~3.8.4",
     "newrelic": "~1.2.0",
     "nodefly": "stable",
-    "nodetiles-core": "LocalData/nodetiles-core#0.1.0",
+    "nodetiles-core": "LocalData/nodetiles-core#6f929ca4b1198927241d9e8d35963cbbf35a73bc",
     "nodetiles-mongodb": "LocalData/nodetiles-mongodb#21a572576a02b0f9cb6d443ab379a7a5e4da6b40",
     "request": "2.27.x",
     "q": "~1.0.0"
