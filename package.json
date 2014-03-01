@@ -1,19 +1,15 @@
 {
-  "name": "nodetiles-server-example",
+  "name": "localdata-tiles",
   "version": "0.1.0",
-  "description": "Joyful map rendering with Node.js.",
+  "description": "Map rendering for LocalData",
   "contributors": [
     {
-      "name": "Rob Bracket",
-      "email": "rob@codeforamerica.org"
+      "name": "Matt Hampel",
+      "email": "matth@localdata.com"
     },
     {
-      "name": "Ben Sheldon",
-      "email": "ben@codeforamerica.org"
-    },
-    {
-      "name": "Alex Yule",
-      "email": "alexy@codeforamerica.org"
+      "name": "Prashant Singh",
+      "email": "prashant@localdata.com"
     }
   ],
   "engines": {
