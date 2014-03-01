@@ -28,7 +28,6 @@
     "lodash": "1.2",
     "lru-cache": "2.3.0",
     "mongoose": "~3.8.4",
-    "nodefly": "stable",
     "newrelic": "~1.3.2",
     "nodetiles-core": "LocalData/nodetiles-core#6f929ca4b1198927241d9e8d35963cbbf35a73bc",
     "nodetiles-mongodb": "LocalData/nodetiles-mongodb#21a572576a02b0f9cb6d443ab379a7a5e4da6b40",
