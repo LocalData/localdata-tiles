@@ -1,19 +1,15 @@
 {
-  "name": "nodetiles-server-example",
+  "name": "localdata-tiles",
   "version": "0.1.0",
-  "description": "Joyful map rendering with Node.js.",
+  "description": "Map rendering for LocalData",
   "contributors": [
     {
-      "name": "Rob Bracket",
-      "email": "rob@codeforamerica.org"
+      "name": "Matt Hampel",
+      "email": "matth@localdata.com"
     },
     {
-      "name": "Ben Sheldon",
-      "email": "ben@codeforamerica.org"
-    },
-    {
-      "name": "Alex Yule",
-      "email": "alexy@codeforamerica.org"
+      "name": "Prashant Singh",
+      "email": "prashant@localdata.com"
     }
   ],
   "engines": {
@@ -28,10 +24,8 @@
     "lodash": "1.2",
     "lru-cache": "2.3.0",
     "mongoose": "~3.8.4",
-    "newrelic": "~1.2.0",
-    "nodefly": "stable",
+    "newrelic": "~1.3.2",
     "nodetiles-core": "LocalData/nodetiles-core#6f929ca4b1198927241d9e8d35963cbbf35a73bc",
-    "nodetiles-mongodb": "LocalData/nodetiles-mongodb#21a572576a02b0f9cb6d443ab379a7a5e4da6b40",
     "request": "2.27.x",
     "q": "~1.0.0"
   },
