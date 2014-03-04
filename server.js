@@ -56,6 +56,8 @@ app.configure('production', function(){
   // io.set('log level', 1); // reduce logging
 });
 
+app.use(express.compress());
+
 // Setup routes
 routes.setup(app);
 
