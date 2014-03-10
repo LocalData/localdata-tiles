@@ -25,12 +25,13 @@
     "lru-cache": "2.3.0",
     "mongoose": "~3.8.4",
     "newrelic": "~1.3.2",
-    "nodetiles-core": "LocalData/nodetiles-core#6f929ca4b1198927241d9e8d35963cbbf35a73bc",
+    "nodetiles-core": "LocalData/nodetiles-core#d33c3009999ef118fc039d169d1c3d978f9b8c4f",
     "request": "2.27.x",
     "q": "~1.0.0"
   },
   "devDependencies": {
     "http-proxy": "~0.10.2",
-    "webkit-devtools-agent": "0.1.1"
+    "memwatch": "~0.2.2",
+    "webkit-devtools-agent": "0.2.3"
   }
 }
