@@ -29,7 +29,8 @@
     "nodetiles-core": "LocalData/nodetiles-core#bac8da4721456e69fd797fdce3cc73aea80413f1",
     "request": "2.27.x",
     "q": "~1.0.0",
-    "xml2js": "^0.4.4"
+    "xml2js": "^0.4.4",
+    "bluebird": "^2.3.11"
   },
   "devDependencies": {
     "http-proxy": "~0.10.2",
