@@ -26,7 +26,7 @@
     "lru-cache": "2.3.0",
     "mongoose": "~3.8.4",
     "newrelic": "~1.3.2",
-    "nodetiles-core": "git//github.com/LocalData/nodetiles-core.git#bac8da4721456e69fd797fdce3cc73aea80413f1",
+    "nodetiles-core": "git://github.com/LocalData/nodetiles-core.git#bac8da4721456e69fd797fdce3cc73aea80413f1",
     "request": "2.27.x",
     "q": "~1.0.0",
     "xml2js": "^0.4.4"
