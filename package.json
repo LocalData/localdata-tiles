@@ -30,7 +30,8 @@
     "request": "2.27.x",
     "q": "~1.0.0",
     "xml2js": "^0.4.4",
-    "bluebird": "^2.3.11"
+    "bluebird": "^2.3.11",
+    "body-parser": "^1.10.0"
   },
   "devDependencies": {
     "http-proxy": "~0.10.2",
