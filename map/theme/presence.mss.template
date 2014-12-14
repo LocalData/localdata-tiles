@@ -1,0 +1,23 @@
+Map {
+	background-color: rgba(0,0,0,0);
+}
+
+#localdata {
+  [zoom >= 14] {
+    line-color: #b7aba5;
+    line-width:0.5;
+    line-opacity:0.5;
+  }
+	polygon-fill: #b7aba5;
+	polygon-opacity:0.85;
+}
+
+#localdata['<%= key %>.length' > 0] {
+  [zoom >= 14] {
+    line-color: #a743c3;
+    line-width:0.5;
+    line-opacity:0.5;
+  }
+	polygon-fill: #a743c3;
+	polygon-opacity:0.85;
+}
