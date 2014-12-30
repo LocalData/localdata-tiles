@@ -1,7 +1,7 @@
 localdata-tiles
 ================
 
-This is an experimental tileserver for use with the **[nodetiles-core](http://github.com/codeforamerica/nodetiles-core)** library, a fully-featured map rendering library for Node.js. It servers tiles and utfgrids for LocalData surveys
+localdata-tiles serves the tiled raster maps for LocalData using a fork of the [nodetiles](http://github.com/codeforamerica/nodetiles-core) rendering library. It provides PNG tiles and UTF grids for LocalData surveys.
 
 Install instructions
 --------------------
@@ -33,3 +33,22 @@ You'll need an SSL key and cert in:
 ```
 
 Then run `PORT=4334 bin/fakeroku 3001`
+
+Layer definitions
+-----------------
+
+To define a layer, POST some `application/json` to `/surveys/SURVEYID/tile.json` with the following format:
+
+```json
+{
+  "select": {"entries.responses": 1},
+  "query": {},
+  "styles": "Map {\n background-color: rgba(0,0,0,0);\n}\n\n#localdata {\n  [zoom >= 14] {\n    line-color:#fff;\n    line-width:0.5;\n    line-opacity:0.5;\n  }\n\n  polygon-opacity:0.85;\n  polygon-fill: #801020;\n\n  [\"responses.What-is-the-built-character\" = \"Medium\"] {\n    polygon-fill: #102080;\n  }\n  [\"responses.Is-there-anything-else-you-would-like-to-say-about-housing-in-San-Francisco.length\" > 0] {\n    polygon-fill: #102080;\n  }\n}"
+}
+```
+
+The `styles` field contains a string with the Carto style sheet.
+
+You can also issue a GET to `/surveys/SURVEYID/tile.json?layerDefinition=LAYERDEF`, where `LAYERDEF` is the (url-encoded) JSON from the POST.
+
+In either case, the server will respond with a `tile.json` that includes the appropriate URLs for 
