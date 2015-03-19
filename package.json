@@ -31,7 +31,10 @@
     "q": "~1.0.0",
     "xml2js": "^0.4.4",
     "bluebird": "^2.3.11",
-    "body-parser": "^1.10.0"
+    "body-parser": "^1.10.0",
+    "pg": "~4.3.0",
+    "knex": "~0.7.6",
+    "pg-query-stream": "~0.7.0"
   },
   "devDependencies": {
     "http-proxy": "~0.10.2",
