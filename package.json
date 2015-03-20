@@ -25,7 +25,7 @@
     "lodash": "~3.5",
     "lru-cache": "2.3.0",
     "mongoose": "~3.8.4",
-    "newrelic": "~1.3.2",
+    "newrelic": "~1.16.2",
     "nodetiles-core": "LocalData/nodetiles-core#a4da0aed7e8198252a8056ab7b1f94e9f2bd2f90",
     "request": "2.27.x",
     "q": "~1.0.0",
