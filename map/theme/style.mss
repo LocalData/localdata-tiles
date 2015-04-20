@@ -16,9 +16,30 @@ Map {
     polygon-fill:#ef6d4a;
   }
 
+  [GEOMETRY = LineString]::outline {
+    line-width: 4;
+    line-cap: round;
+
+    [zoom >= 15] {
+      line-width: 5;
+    }
+    [zoom >= 16] {
+      line-width: 6;
+    }
+    [zoom >= 17] {
+      line-width: 7;
+    }
+    [zoom >= 18] {
+      line-width: 8;
+    }
+
+    line-color: #fff3da;
+    line-opacity: 1;
+  }
 
   [GEOMETRY = LineString] {
     line-width: 2;
+    line-cap: round;
 
     [zoom >= 15] {
       line-width: 3;
