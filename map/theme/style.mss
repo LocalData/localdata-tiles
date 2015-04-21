@@ -16,6 +16,7 @@ Map {
     polygon-fill:#ef6d4a;
   }
 
+  [GEOMETRY = MultiLineString]::outline,
   [GEOMETRY = LineString]::outline {
     line-width: 4;
     line-cap: round;
@@ -37,6 +38,7 @@ Map {
     line-opacity: 1;
   }
 
+  [GEOMETRY = MultiLineString],
   [GEOMETRY = LineString] {
     line-width: 2;
     line-cap: round;
