@@ -3,7 +3,6 @@ Map {
 }
 
 #localdata {
-
   [GEOMETRY = MultiPolygon],
   [GEOMETRY = Polygon] {
     [zoom >= 14] {
@@ -81,5 +80,4 @@ Map {
     marker-fill-opacity: 0.9;
     marker-line-opacity: 1;
   }
-
 }
