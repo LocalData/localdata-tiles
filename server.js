@@ -16,13 +16,14 @@ if (process.env.NEW_RELIC_LICENSE_KEY) {
   require('newrelic');
 }
 
-var express = require('express');
 var http = require('http');
 
-var mongoose = require('mongoose');
+var compression = require('compression');
+var errorhandler = require('errorhandler');
+var express = require('express');
+var morgan = require('morgan');
 
 var app = module.exports = express();
-var db = null;
 
 var mongo = require('./lib/mongo');
 var settings = require('./lib/settings');
@@ -30,8 +31,6 @@ var routes = require('./lib/routes');
 
 // Basic configuration
 var PORT = settings.port;
-var MONGO = settings.mongo;
-var PREFIX = settings.prefix;
 
 function allowCrossDomain(req, res, next) {
     res.header('Access-Control-Allow-Origin', '*');
@@ -40,23 +39,15 @@ function allowCrossDomain(req, res, next) {
     next();
 }
 
-app.use(express.logger(settings.expressLogger));
+app.use(morgan(settings.expressLogger));
 app.use(allowCrossDomain);
 
-// Configure Express app
-app.configure('development', function(){
-  app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
-});
+// Set up development error handling
+if (app.get('env') === 'development') {
+  app.use(errorhandler());
+}
 
-app.configure('production', function(){
-  app.use(express.errorHandler());
-
-  // TODO
-  // Requires socket.io
-  // io.set('log level', 1); // reduce logging
-});
-
-app.use(express.compress());
+app.use(compression());
 
 // Setup routes
 routes.setup(app);
@@ -71,6 +62,6 @@ mongo.connect(function (error) {
   var server = http.createServer(app);
 
   server.listen(PORT, function (error) {
-    console.log('Express server listening on port %d in %s mode', PORT, app.settings.env);
+    console.log('Listening on port %d in %s mode', PORT, app.get('env'));
   });
 });
