@@ -11,7 +11,8 @@ To run locally on OS X:
 Clone and run `npm install`. You may need to run `brew install cairo` and confirm
 the installation succeeded (check `brew doctor`). You may also need to `brew install` `fontconfig` and `pixman`.
 
-If you get more Cairo-related errors, you may need to explicitly say where to look for libraries: `export PKG_CONFIG_PATH=/usr/X11/lib/pkgconfig`
+If you get more Cairo-related errors, you may need to explicitly say where to look for libraries: `export PKG_CONFIG_PATH=/usr/X11/lib/pkgconfig`. 
+This may also help: `export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:/opt/X11/lib/pkgconfig`
 
 Copy `sample.env` and update the values to match your environment.
 
