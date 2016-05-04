@@ -28,7 +28,10 @@ var cert = fs.readFileSync(process.env.HOME + '/.ssh/localdata-cert.pem', 'utf8'
 var proxy = new httpProxy.HttpProxy({
   target: {
     host: 'localhost',
-    port: target
+    port: target,
+    rejectUnauthorized: false,
+    requestCert: true,
+    agent: false
   }
 });
 
