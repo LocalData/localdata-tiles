@@ -31,7 +31,7 @@
     "lru-cache": "2.3.0",
     "mongoose": "~4.1.12",
     "morgan": "^1.6.1",
-    "newrelic": "~1.23.0",
+    "newrelic": "~1.27.0",
     "nodetiles-core": "LocalData/nodetiles-core#4e661e1c8140a48860d127339c5fd14b7ed86249",
     "pg": "~4.3.0",
     "pg-query-stream": "~0.7.0",
