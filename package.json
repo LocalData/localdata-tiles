@@ -36,7 +36,7 @@
     "pg": "~4.3.0",
     "pg-query-stream": "~0.7.0",
     "q": "~1.0.0",
-    "request": "2.27.x",
+    "request": "2.72.x",
     "xml2js": "^0.4.4"
   },
   "devDependencies": {
